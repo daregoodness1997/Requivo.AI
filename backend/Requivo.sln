@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requivo.Api", "src\Requivo.Api\Requivo.Api.csproj", "{A1B2C3D4-0001-0000-0000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requivo.Core", "src\Requivo.Core\Requivo.Core.csproj", "{A1B2C3D4-0001-0000-0000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requivo.Infrastructure", "src\Requivo.Infrastructure\Requivo.Infrastructure.csproj", "{A1B2C3D4-0001-0000-0000-000000000003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requivo.Orchestration", "src\Requivo.Orchestration\Requivo.Orchestration.csproj", "{A1B2C3D4-0001-0000-0000-000000000004}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requivo.AI", "src\Requivo.AI\Requivo.AI.csproj", "{A1B2C3D4-0001-0000-0000-000000000005}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requivo.Tools", "src\Requivo.Tools\Requivo.Tools.csproj", "{A1B2C3D4-0001-0000-0000-000000000006}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requivo.Core.Tests", "tests\Requivo.Core.Tests\Requivo.Core.Tests.csproj", "{A1B2C3D4-0001-0000-0000-000000000007}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Requivo.Orchestration.Tests", "tests\Requivo.Orchestration.Tests\Requivo.Orchestration.Tests.csproj", "{A1B2C3D4-0001-0000-0000-000000000008}"
+EndProject
+
+Global
+  GlobalSection(SolutionConfigurationPlatforms) = preSolution
+    Debug|Any CPU = Debug|Any CPU
+    Release|Any CPU = Release|Any CPU
+  EndGlobalSection
+EndGlobal

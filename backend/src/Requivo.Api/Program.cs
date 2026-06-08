@@ -1,0 +1,93 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
+using System.Text;
+using Requivo.AI;
+using Requivo.Core.Interfaces;
+using Requivo.Infrastructure.Cache;
+using Requivo.Infrastructure.Data;
+using Requivo.Infrastructure.Integrations;
+using Requivo.Orchestration;
+using Requivo.Tools;
+
+var builder = WebApplication.CreateBuilder(args);
+var cfg = builder.Configuration;
+
+// ── Database ───────────────────────────────────────────────────
+builder.Services.AddDbContext<RequivoDbContext>(opt =>
+    opt.UseNpgsql(cfg.GetConnectionString("Postgres")));
+
+// ── Redis ──────────────────────────────────────────────────────
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(cfg.GetConnectionString("Redis")!));
+builder.Services.AddScoped<IStateStore, RedisStateStore>();
+
+// ── AI ─────────────────────────────────────────────────────────
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IQwenClient, QwenClient>();
+builder.Services.AddScoped<IPromptOrchestrator, PromptOrchestrator>();
+
+// ── Tools ──────────────────────────────────────────────────────
+builder.Services.AddScoped<ITool, InventoryTool>();
+builder.Services.AddScoped<ITool, ProcurementTool>();
+builder.Services.AddScoped<ITool, FinanceTool>();
+builder.Services.AddScoped<ITool, SalesTool>();
+builder.Services.AddScoped<ITool, HRTool>();
+builder.Services.AddScoped<ITool, ReportingTool>();
+
+// ── Orchestration ──────────────────────────────────────────────
+builder.Services.AddScoped<IWorkflowEngine, WorkflowEngine>();
+builder.Services.AddScoped<IApprovalService, HitlService>();
+builder.Services.AddScoped<IEmailService, SendGridEmailService>();
+builder.Services.AddScoped<ISlackService, SlackService>();
+
+// ── Auth (JWT) ─────────────────────────────────────────────────
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(opt =>
+    {
+        opt.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer           = true,
+            ValidateAudience         = true,
+            ValidateLifetime         = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer   = cfg["Jwt:Issuer"],
+            ValidAudience = cfg["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(cfg["Jwt:SecretKey"]!))
+        };
+    });
+builder.Services.AddAuthorization();
+
+// ── API / Swagger ──────────────────────────────────────────────
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// ── CORS (allow dev frontend) ──────────────────────────────────
+builder.Services.AddCors(opt => opt.AddPolicy("DevFrontend", p =>
+    p.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.UseCors("DevFrontend");
+}
+
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
+
+// ── Auto-migrate on startup (dev only) ────────────────────────
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    scope.ServiceProvider.GetRequiredService<RequivoDbContext>().Database.Migrate();
+}
+
+app.Run();
