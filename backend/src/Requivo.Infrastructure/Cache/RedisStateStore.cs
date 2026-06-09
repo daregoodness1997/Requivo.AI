@@ -19,7 +19,10 @@ public class RedisStateStore(IConnectionMultiplexer redis) : IStateStore
     public async Task<WorkflowContext?> LoadAsync(string workflowId, CancellationToken ct = default)
     {
         var json = await _db.StringGetAsync(Key(workflowId));
-        return json.IsNullOrEmpty ? null : JsonSerializer.Deserialize<WorkflowContext>(json!);
+        if (json.IsNullOrEmpty)
+            return null;
+
+        return JsonSerializer.Deserialize<WorkflowContext>(json.ToString());
     }
 
     public async Task DeleteAsync(string workflowId, CancellationToken ct = default)

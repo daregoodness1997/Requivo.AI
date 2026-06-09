@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using Requivo.Core.Enums;
 using Requivo.Core.Interfaces;
 using Requivo.Core.Models;
@@ -37,7 +38,7 @@ public class HitlService(
         var approval = await db.ApprovalRequests.FindAsync([approvalId], ct)
                        ?? throw new KeyNotFoundException($"Approval {approvalId} not found");
 
-        approval.Decision  = decision;
+        approval.Decision = decision;
         approval.DecidedBy = decidedBy;
         approval.Rationale = rationale;
         approval.DecidedAt = DateTime.UtcNow;

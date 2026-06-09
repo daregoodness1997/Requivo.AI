@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using Requivo.AI;
 using Requivo.Core.Enums;
 using Requivo.Core.Interfaces;
@@ -58,9 +59,11 @@ public class WorkflowEngine(
             }
 
             wf.Domain = plan.Domain;
-            wf.Steps  = plan.Steps.Select((s, i) => new WorkflowStep
+            wf.Steps = plan.Steps.Select((s, i) => new WorkflowStep
             {
-                Index = i, ToolName = s.ToolName, Description = s.Description
+                Index = i,
+                ToolName = s.ToolName,
+                Description = s.Description
             }).ToList();
 
             await TransitionAsync(wf, WorkflowState.InProgress, ct);
@@ -71,7 +74,7 @@ public class WorkflowEngine(
                 context.StepIndex = step.Index;
                 await stateStore.SaveAsync(context, ct);
 
-                step.State     = WorkflowState.InProgress;
+                step.State = WorkflowState.InProgress;
                 step.StartedAt = DateTime.UtcNow;
                 await db.SaveChangesAsync(ct);
 
@@ -80,17 +83,17 @@ public class WorkflowEngine(
 
                 var result = await ExecuteWithRetryAsync(tool, null, context, ct);
 
-                step.Output      = result.Data;
+                step.Output = result.Data;
                 step.CompletedAt = DateTime.UtcNow;
-                step.State       = result.Success ? WorkflowState.Completed : WorkflowState.Failed;
+                step.State = result.Success ? WorkflowState.Completed : WorkflowState.Failed;
 
                 context.AuditTrail.Add(new AuditEntry
                 {
                     WorkflowId = wf.Id,
-                    UserId     = userId,
-                    ToolName   = step.ToolName,
-                    Action     = step.Description,
-                    Outcome    = result.Success ? "Success" : "Failure",
+                    UserId = userId,
+                    ToolName = step.ToolName,
+                    Action = step.Description,
+                    Outcome = result.Success ? "Success" : "Failure",
                     OutputData = result.Data,
                 });
 
@@ -129,7 +132,7 @@ public class WorkflowEngine(
 
     private async Task TransitionAsync(Workflow wf, WorkflowState next, CancellationToken ct)
     {
-        wf.State     = next;
+        wf.State = next;
         wf.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
         logger.LogInformation("Workflow {Id} → {State}", wf.Id, next);
