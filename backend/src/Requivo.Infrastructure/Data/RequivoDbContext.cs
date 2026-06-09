@@ -15,6 +15,7 @@ public class RequivoDbContext(DbContextOptions<RequivoDbContext> options) : DbCo
     public DbSet<Workflow> Workflows => Set<Workflow>();
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
+    public DbSet<AppUser> Users => Set<AppUser>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -37,6 +38,12 @@ public class RequivoDbContext(DbContextOptions<RequivoDbContext> options) : DbCo
         {
             e.HasKey(a => a.Id);
             e.Property(a => a.Decision).HasConversion<string>();
+        });
+
+        mb.Entity<AppUser>(e =>
+        {
+            e.HasKey(u => u.Id);
+            e.HasIndex(u => u.Email).IsUnique();
         });
 
         mb.Entity<AuditEntry>(e =>

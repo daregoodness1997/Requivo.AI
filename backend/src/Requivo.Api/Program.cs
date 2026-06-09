@@ -10,6 +10,8 @@ using Requivo.Infrastructure.Data;
 using Requivo.Infrastructure.Integrations;
 using Requivo.Orchestration;
 using Requivo.Tools;
+using Requivo.Api.Security;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
@@ -48,22 +50,71 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         opt.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer           = true,
-            ValidateAudience         = true,
-            ValidateLifetime         = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer   = cfg["Jwt:Issuer"],
+            ValidIssuer = cfg["Jwt:Issuer"],
             ValidAudience = cfg["Jwt:Audience"],
+            NameClaimType = "sub",
+            RoleClaimType = "role",
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(cfg["Jwt:SecretKey"]!))
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddSingleton<IAuthorizationHandler, MfaRequirementHandler>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .AddRequirements(new MfaRequirement())
+        .Build();
+
+    options.AddPolicy(AuthorizationPolicies.WorkflowStart, policy =>
+        policy.RequireRole(AppRoles.WorkflowOperator, AppRoles.Admin));
+
+    options.AddPolicy(AuthorizationPolicies.WorkflowRead, policy =>
+        policy.RequireRole(AppRoles.WorkflowOperator, AppRoles.Auditor, AppRoles.Admin));
+
+    options.AddPolicy(AuthorizationPolicies.ApprovalRead, policy =>
+        policy.RequireRole(AppRoles.Approver, AppRoles.Admin));
+
+    options.AddPolicy(AuthorizationPolicies.ApprovalDecide, policy =>
+        policy.RequireRole(AppRoles.Approver, AppRoles.Admin));
+
+    options.AddPolicy(AuthorizationPolicies.AuditRead, policy =>
+        policy.RequireRole(AppRoles.Auditor, AppRoles.Admin));
+});
 
 // ── API / Swagger ──────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Requivo AI API",
+        Version = "v1",
+        Description = "Autonomous ERP operations platform. All endpoints require a valid JWT with an MFA claim. " +
+                      "Use the Authorize button below to supply a Bearer token."
+    });
+
+    // JWT auth definition
+    var jwtScheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Paste your JWT token here (without the 'Bearer ' prefix)."
+    };
+    c.AddSecurityDefinition("Bearer", jwtScheme);
+
+    // Apply [Authorize] lock icon to all protected operations
+    c.OperationFilter<Requivo.Api.Swagger.AuthorizeOperationFilter>();
+});
 
 // ── CORS (allow dev frontend) ──────────────────────────────────
 builder.Services.AddCors(opt => opt.AddPolicy("DevFrontend", p =>

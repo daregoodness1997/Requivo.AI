@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Requivo.Api.Security;
 using Requivo.Infrastructure.Data;
 
 namespace Requivo.Api.Controllers;
@@ -11,6 +12,7 @@ namespace Requivo.Api.Controllers;
 public class AuditController(RequivoDbContext db) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.AuditRead)]
     public async Task<IActionResult> List([FromQuery] Guid? workflowId, CancellationToken ct)
     {
         var query = db.AuditEntries.AsQueryable();
