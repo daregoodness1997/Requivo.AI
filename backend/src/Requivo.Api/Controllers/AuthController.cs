@@ -69,7 +69,7 @@ public class AuthController(
             mfaVerified = true;
         }
 
-        var accessToken  = tokens.GenerateAccessToken(user, mfaVerified);
+        var accessToken = tokens.GenerateAccessToken(user, mfaVerified);
         var refreshToken = tokens.GenerateRefreshToken();
 
         return Ok(new TokenResponse(accessToken, refreshToken, mfaVerified));
