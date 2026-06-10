@@ -1,4 +1,6 @@
 import client from './client';
+import { mockApprovalApi, mockAuditApi, mockWorkflowApi } from './mockApi';
+import { env } from '@/config/env';
 import type {
   Workflow,
   ApprovalRequest,
@@ -9,26 +11,40 @@ import type {
 
 export const workflowApi = {
   start: (body: StartWorkflowRequest) =>
-    client.post<Workflow>('/api/workflow', body).then((r) => r.data),
+    env.useMockApi
+      ? mockWorkflowApi.start(body)
+      : client.post<Workflow>('/api/workflow', body).then((response) => response.data),
 
   getById: (id: string) =>
-    client.get<Workflow>(`/api/workflow/${id}`).then((r) => r.data),
+    env.useMockApi
+      ? mockWorkflowApi.getById(id)
+      : client.get<Workflow>(`/api/workflow/${id}`).then((response) => response.data),
 
   list: () =>
-    client.get<Workflow[]>('/api/workflow').then((r) => r.data),
+    env.useMockApi
+      ? mockWorkflowApi.list()
+      : client.get<Workflow[]>('/api/workflow').then((response) => response.data),
 };
 
 export const approvalApi = {
   list: () =>
-    client.get<ApprovalRequest[]>('/api/approval').then((r) => r.data),
+    env.useMockApi
+      ? mockApprovalApi.list()
+      : client.get<ApprovalRequest[]>('/api/approval').then((response) => response.data),
 
   decide: (id: string, body: ApprovalActionRequest) =>
-    client.post<ApprovalRequest>(`/api/approval/${id}/decide`, body).then((r) => r.data),
+    env.useMockApi
+      ? mockApprovalApi.decide(id, body)
+      : client
+          .post<ApprovalRequest>(`/api/approval/${id}/decide`, body)
+          .then((response) => response.data),
 };
 
 export const auditApi = {
   list: (workflowId?: string) =>
-    client
-      .get<AuditEntry[]>('/api/audit', { params: { workflowId } })
-      .then((r) => r.data),
+    env.useMockApi
+      ? mockAuditApi.list(workflowId)
+      : client
+          .get<AuditEntry[]>('/api/audit', { params: { workflowId } })
+          .then((response) => response.data),
 };

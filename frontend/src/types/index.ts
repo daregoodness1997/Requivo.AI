@@ -6,13 +6,7 @@ export type WorkflowState =
   | 'Completed'
   | 'Failed';
 
-export type WorkflowDomain =
-  | 'Inventory'
-  | 'Procurement'
-  | 'Finance'
-  | 'Sales'
-  | 'HR'
-  | 'Reporting';
+export type WorkflowDomain = 'Inventory' | 'Procurement' | 'Finance' | 'Sales' | 'HR' | 'Reporting';
 
 export type ApprovalDecision = 'Pending' | 'Approved' | 'Rejected';
 
@@ -22,6 +16,7 @@ export interface Workflow {
   domain: WorkflowDomain | null;
   state: WorkflowState;
   steps: WorkflowStep[];
+  failureReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +39,7 @@ export interface ApprovalRequest {
   businessContext: string;
   decision: ApprovalDecision;
   decidedBy: string | null;
+  rationale?: string | null;
   decidedAt: string | null;
   createdAt: string;
 }
@@ -65,4 +61,39 @@ export interface StartWorkflowRequest {
 export interface ApprovalActionRequest {
   decision: 'Approved' | 'Rejected';
   rationale: string;
+}
+
+export type UserRole =
+  | 'SystemAdmin'
+  | 'FinanceManager'
+  | 'ProcurementLead'
+  | 'HRManager'
+  | 'SalesRep'
+  | 'Auditor';
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResult {
+  mfaRequired: boolean;
+  challengeId: string;
+}
+
+export interface VerifyMfaRequest {
+  challengeId: string;
+  code: string;
+}
+
+export interface AuthSession {
+  accessToken: string;
+  user: AuthUser;
 }
