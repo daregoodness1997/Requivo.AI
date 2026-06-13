@@ -1,5 +1,13 @@
 import { formatDistanceToNow } from 'date-fns';
-import { ClipboardCheck, FileClock, MessageSquareText, Plus, Settings, Sparkles, X } from 'lucide-react';
+import {
+  ClipboardCheck,
+  FileClock,
+  MessageSquareText,
+  Plus,
+  Settings,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

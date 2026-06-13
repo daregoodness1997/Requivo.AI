@@ -48,6 +48,9 @@ builder.Services.AddScoped<ISlackService, SlackService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
+        // Keep JWT claims as issued (sub, role, mfa, amr) so policy checks match.
+        opt.MapInboundClaims = false;
+
         opt.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,

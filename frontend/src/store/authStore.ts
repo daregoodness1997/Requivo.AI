@@ -22,7 +22,12 @@ function claimString(payload: Record<string, unknown>, key: string): string | nu
 
 function claimRole(payload: Record<string, unknown>): AuthUser['role'] {
   const role = claimString(payload, 'role');
-  if (role === 'Admin' || role === 'WorkflowOperator' || role === 'Approver' || role === 'Auditor') {
+  if (
+    role === 'Admin' ||
+    role === 'WorkflowOperator' ||
+    role === 'Approver' ||
+    role === 'Auditor'
+  ) {
     return role;
   }
   throw new Error('Unknown user role in token.');
@@ -31,7 +36,9 @@ function claimRole(payload: Record<string, unknown>): AuthUser['role'] {
 function buildUserFromToken(token: string): AuthUser {
   const payload = parseJwtPayload(token);
   const id = claimString(payload, 'sub');
-  const email = claimString(payload, 'email') ?? claimString(payload, 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress');
+  const email =
+    claimString(payload, 'email') ??
+    claimString(payload, 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress');
   if (!id || !email) {
     throw new Error('Token is missing required user claims.');
   }

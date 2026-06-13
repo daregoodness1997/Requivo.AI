@@ -133,7 +133,9 @@ export default function LoginPage() {
               {!isMfaStep ? (
                 <>
                   <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-gray-700">Email address</span>
+                    <span className="mb-2 block text-sm font-medium text-gray-700">
+                      Email address
+                    </span>
                     <input
                       type="email"
                       autoComplete="email"

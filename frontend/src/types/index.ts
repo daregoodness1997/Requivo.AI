@@ -63,11 +63,7 @@ export interface ApprovalActionRequest {
   rationale: string;
 }
 
-export type UserRole =
-  | 'Admin'
-  | 'WorkflowOperator'
-  | 'Approver'
-  | 'Auditor';
+export type UserRole = 'Admin' | 'WorkflowOperator' | 'Approver' | 'Auditor';
 
 export interface AuthUser {
   id: string;

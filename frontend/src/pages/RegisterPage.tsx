@@ -85,7 +85,8 @@ export default function RegisterPage() {
               Create your Requivo workspace identity.
             </h1>
             <p className="mt-6 max-w-lg text-base leading-7 text-blue-100/80">
-              Register a role-based account, then sign in with your MFA code to operate within policy.
+              Register a role-based account, then sign in with your MFA code to operate within
+              policy.
             </p>
           </div>
         </div>
@@ -108,7 +109,9 @@ export default function RegisterPage() {
               <UserPlus className="size-6" />
             </div>
             <h2 className="mt-5 text-2xl font-bold tracking-tight text-gray-950">Create account</h2>
-            <p className="mt-2 text-sm text-gray-500">Register a role-based account for backend auth.</p>
+            <p className="mt-2 text-sm text-gray-500">
+              Register a role-based account for backend auth.
+            </p>
 
             {error && (
               <Alert className="mt-5" role="alert" tone="danger">
@@ -160,7 +163,9 @@ export default function RegisterPage() {
               </label>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-gray-700">Confirm password</span>
+                <span className="mb-2 block text-sm font-medium text-gray-700">
+                  Confirm password
+                </span>
                 <input
                   type="password"
                   autoComplete="new-password"

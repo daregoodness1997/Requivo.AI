@@ -14,7 +14,9 @@ import type { MeResponse } from '@/types';
 export default function ProfilePage() {
   const { user, mfaVerified, hydrateFromToken } = useAuthStore();
   const [profile, setProfile] = useState<MeResponse | null>(null);
-  const [setupResult, setSetupResult] = useState<{ secret: string; otpAuthUri: string } | null>(null);
+  const [setupResult, setSetupResult] = useState<{ secret: string; otpAuthUri: string } | null>(
+    null,
+  );
   const [verifyCode, setVerifyCode] = useState('');
   const [disableCode, setDisableCode] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -58,7 +60,9 @@ export default function ProfilePage() {
     try {
       const result = await authApi.setupMfa();
       setSetupResult(result);
-      setSuccess('MFA secret generated. Add it to your authenticator app, then verify with a code.');
+      setSuccess(
+        'MFA secret generated. Add it to your authenticator app, then verify with a code.',
+      );
     } catch (actionError) {
       setError(getErrorMessage(actionError, 'MFA setup failed.'));
     } finally {
@@ -163,7 +167,9 @@ export default function ProfilePage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/70 pb-4">
           <div>
             <p className="text-sm font-semibold text-gray-900">Multi-factor authentication</p>
-            <p className="text-xs text-slate-500">Optional security measure managed from your profile</p>
+            <p className="text-xs text-slate-500">
+              Optional security measure managed from your profile
+            </p>
           </div>
           <Badge tone={profile?.mfaEnabled ? 'success' : 'neutral'}>
             {profile?.mfaEnabled ? 'Enabled' : 'Disabled'}
@@ -191,7 +197,9 @@ export default function ProfilePage() {
               <p className="text-xs uppercase tracking-wide text-cyan-700">Secret</p>
               <p className="mt-1 break-all font-mono text-sm text-cyan-900">{setupResult.secret}</p>
               <p className="mt-3 text-xs uppercase tracking-wide text-cyan-700">OTP URI</p>
-              <p className="mt-1 break-all font-mono text-xs text-cyan-900">{setupResult.otpAuthUri}</p>
+              <p className="mt-1 break-all font-mono text-xs text-cyan-900">
+                {setupResult.otpAuthUri}
+              </p>
 
               <form className="mt-4 space-y-3" onSubmit={verifyMfa}>
                 <label className="block">
@@ -238,7 +246,11 @@ export default function ProfilePage() {
                     onChange={(event) => setDisableCode(event.target.value.replace(/\D/g, ''))}
                   />
                 </label>
-                <Button variant="destructive" type="submit" disabled={disableCode.length < 6 || isActionLoading}>
+                <Button
+                  variant="destructive"
+                  type="submit"
+                  disabled={disableCode.length < 6 || isActionLoading}
+                >
                   Disable MFA
                 </Button>
               </form>
