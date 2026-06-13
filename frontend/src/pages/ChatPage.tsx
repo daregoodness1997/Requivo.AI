@@ -38,10 +38,11 @@ export default function ChatPage() {
   }, [setWorkflows]);
 
   return (
-    <div className="flex h-[calc(100vh-6rem)] min-h-[34rem] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="border-b border-gray-100 px-6 py-4">
-        <h1 className="text-base font-semibold text-gray-900">ERP Assistant</h1>
-        <p className="text-xs text-gray-500">Describe a business task in plain English</p>
+    <div className="page-shell fade-up-delay flex h-[calc(100vh-6.1rem)] min-h-[34rem] flex-col overflow-hidden">
+      <div className="ambient-line border-b border-slate-200/75 px-6 py-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Natural language operations</p>
+        <h1 className="font-heading text-base font-semibold text-gray-900">ERP Assistant</h1>
+        <p className="text-xs text-slate-500">Describe a business task in plain English and let Requivo orchestrate the workflow.</p>
       </div>
       {loadError && (
         <Alert className="m-4 mb-0" role="alert" tone="danger">
@@ -49,7 +50,7 @@ export default function ChatPage() {
         </Alert>
       )}
       {isLoading ? (
-        <div className="flex flex-1 items-center justify-center gap-2 text-sm text-gray-500">
+        <div className="flex flex-1 items-center justify-center gap-2 text-sm text-slate-500">
           <Spinner className="h-5 w-5" />
           Loading workflows
         </div>

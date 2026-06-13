@@ -78,152 +78,160 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
-      <div className="flex min-w-0 items-center gap-3">
-        <Button
-          aria-label="Open navigation"
-          className="shrink-0 lg:hidden"
-          size="icon"
-          variant="outline"
-          onClick={onOpenNavigation}
-        >
-          <Menu />
-        </Button>
-        <div className="min-w-0">
-          <h1 className="truncate text-sm font-semibold text-gray-950 sm:text-base">
-            {route.title}
-          </h1>
-          <p className="hidden truncate text-xs text-gray-500 sm:block">{route.description}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 sm:gap-3">
-        <Badge className="hidden sm:inline-flex" tone="info">
-          Demo mode
-        </Badge>
-        <div className="relative" ref={notificationRef}>
+    <header className="sticky top-0 z-30 px-4 pt-3 sm:px-6 lg:px-8">
+      <div className="surface-card flex h-16 items-center justify-between rounded-2xl border border-white/70 px-3 sm:px-4">
+        <div className="flex min-w-0 items-center gap-3">
           <Button
-            aria-label={
-              pendingCount
-                ? `${pendingCount} pending approval${pendingCount === 1 ? '' : 's'}`
-                : 'Notifications'
-            }
-            aria-expanded={isNotificationOpen}
-            aria-haspopup="dialog"
-            className="relative"
+            aria-label="Open navigation"
+            className="shrink-0 lg:hidden"
             size="icon"
-            variant="ghost"
-            onClick={() => {
-              setIsUserMenuOpen(false);
-              setIsNotificationOpen((open) => !open);
-            }}
+            variant="outline"
+            onClick={onOpenNavigation}
           >
-            <Bell />
-            {pendingCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-warning-700 text-[10px] font-bold text-white">
-                {pendingCount}
-              </span>
-            )}
+            <Menu />
           </Button>
-          {isNotificationOpen && (
-            <div
-              role="dialog"
-              aria-label="Notifications"
-              className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
-            >
-              <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-950">Notifications</p>
-                  <p className="text-xs text-gray-500">
-                    {pendingCount
-                      ? `${pendingCount} approval${pendingCount === 1 ? '' : 's'} need your attention`
-                      : 'You are all caught up'}
-                  </p>
-                </div>
-                {pendingCount > 0 && <Badge tone="warning">{pendingCount} pending</Badge>}
-              </div>
-
-              {pendingCount > 0 ? (
-                <div className="max-h-80 divide-y divide-gray-100 overflow-y-auto">
-                  {pendingApprovals.slice(0, 3).map((approval) => (
-                    <button
-                      key={approval.id}
-                      type="button"
-                      className="block w-full px-4 py-3 text-left transition-colors hover:bg-gray-50 focus-visible:bg-gray-50"
-                      onClick={openApprovals}
-                    >
-                      <span className="block text-xs font-medium text-warning-700">
-                        {approval.triggerReason}
-                      </span>
-                      <span className="mt-1 block text-sm font-semibold text-gray-900">
-                        {approval.proposedAction}
-                      </span>
-                      <span className="mt-1 line-clamp-2 block text-xs leading-5 text-gray-500">
-                        {approval.businessContext}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-8 text-center">
-                  <Bell className="mx-auto size-7 text-gray-300" />
-                  <p className="mt-2 text-sm font-medium text-gray-700">No new notifications</p>
-                </div>
-              )}
-
-              <button
-                type="button"
-                className="flex w-full items-center justify-between border-t border-gray-100 px-4 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-50"
-                onClick={openApprovals}
-              >
-                View all approvals
-                <ArrowRight className="size-4" />
-              </button>
-            </div>
-          )}
+          <div className="min-w-0">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
+              Operations workspace
+            </p>
+            <h1 className="font-heading truncate text-sm font-semibold tracking-tight text-gray-950 sm:text-base">
+              {route.title}
+            </h1>
+            <p className="hidden truncate text-xs text-slate-500 sm:block">{route.description}</p>
+          </div>
         </div>
-        <div className="relative" ref={userMenuRef}>
-          <button
-            type="button"
-            aria-expanded={isUserMenuOpen}
-            aria-haspopup="menu"
-            className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 py-1 pl-1 pr-2 transition-colors hover:bg-gray-100"
-            onClick={() => {
-              setIsNotificationOpen(false);
-              setIsUserMenuOpen((open) => !open);
-            }}
-          >
-            <div className="flex size-8 items-center justify-center rounded-full bg-brand-900 text-xs font-bold text-white">
-              {initials}
-            </div>
-            <div className="hidden pr-1 text-left sm:block">
-              <p className="text-xs font-semibold text-gray-900">{user?.name ?? 'Demo User'}</p>
-              <p className="text-[10px] text-gray-500">{roleLabel}</p>
-            </div>
-            <ChevronDown className="hidden size-3.5 text-gray-400 sm:block" />
-          </button>
-          {isUserMenuOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-gray-200 bg-white p-2 shadow-xl"
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Badge className="hidden sm:inline-flex" tone="info">
+            Demo mode
+          </Badge>
+
+          <div className="relative" ref={notificationRef}>
+            <Button
+              aria-label={
+                pendingCount
+                  ? `${pendingCount} pending approval${pendingCount === 1 ? '' : 's'}`
+                  : 'Notifications'
+              }
+              aria-expanded={isNotificationOpen}
+              aria-haspopup="dialog"
+              className="relative"
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                setIsUserMenuOpen(false);
+                setIsNotificationOpen((open) => !open);
+              }}
             >
-              <div className="border-b border-gray-100 px-3 py-2">
-                <p className="truncate text-xs font-semibold text-gray-900">{user?.name}</p>
-                <p className="truncate text-[11px] text-gray-500">{user?.email}</p>
-              </div>
-              <button
-                type="button"
-                role="menuitem"
-                className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-950"
-                onClick={() => {
-                  setIsUserMenuOpen(false);
-                  void logout().then(() => navigate('/login', { replace: true }));
-                }}
+              <Bell />
+              {pendingCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-cyan-700 text-[10px] font-bold text-white shadow-sm">
+                  {pendingCount}
+                </span>
+              )}
+            </Button>
+            {isNotificationOpen && (
+              <div
+                role="dialog"
+                aria-label="Notifications"
+                className="surface-card absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/70"
               >
-                <LogOut className="size-4" />
-                Sign out
-              </button>
-            </div>
-          )}
+                <div className="ambient-line flex items-center justify-between border-b border-slate-200/70 px-4 py-3">
+                  <div>
+                    <p className="font-heading text-sm font-semibold text-gray-950">Notifications</p>
+                    <p className="text-xs text-slate-500">
+                      {pendingCount
+                        ? `${pendingCount} approval${pendingCount === 1 ? '' : 's'} need your attention`
+                        : 'You are all caught up'}
+                    </p>
+                  </div>
+                  {pendingCount > 0 && <Badge tone="warning">{pendingCount} pending</Badge>}
+                </div>
+
+                {pendingCount > 0 ? (
+                  <div className="max-h-80 divide-y divide-slate-200/70 overflow-y-auto">
+                    {pendingApprovals.slice(0, 3).map((approval) => (
+                      <button
+                        key={approval.id}
+                        type="button"
+                        className="block w-full px-4 py-3 text-left transition-colors hover:bg-slate-100/60 focus-visible:bg-slate-100/60"
+                        onClick={openApprovals}
+                      >
+                        <span className="block text-xs font-medium text-cyan-700">
+                          {approval.triggerReason}
+                        </span>
+                        <span className="mt-1 block text-sm font-semibold text-gray-900">
+                          {approval.proposedAction}
+                        </span>
+                        <span className="mt-1 line-clamp-2 block text-xs leading-5 text-gray-500">
+                          {approval.businessContext}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-8 text-center">
+                    <Bell className="mx-auto size-7 text-gray-300" />
+                    <p className="mt-2 text-sm font-medium text-gray-700">No new notifications</p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between border-t border-slate-200/70 px-4 py-3 text-sm font-semibold text-sky-800 hover:bg-sky-50/80"
+                  onClick={openApprovals}
+                >
+                  View all approvals
+                  <ArrowRight className="size-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="relative" ref={userMenuRef}>
+            <button
+              type="button"
+              aria-expanded={isUserMenuOpen}
+              aria-haspopup="menu"
+              className="flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 py-1 pl-1 pr-2 transition-colors hover:bg-slate-100/70"
+              onClick={() => {
+                setIsNotificationOpen(false);
+                setIsUserMenuOpen((open) => !open);
+              }}
+            >
+              <div className="flex size-8 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                {initials}
+              </div>
+              <div className="hidden pr-1 text-left sm:block">
+                <p className="text-xs font-semibold text-gray-900">{user?.name ?? 'Demo User'}</p>
+                <p className="text-[10px] uppercase tracking-wide text-gray-500">{roleLabel}</p>
+              </div>
+              <ChevronDown className="hidden size-3.5 text-gray-400 sm:block" />
+            </button>
+            {isUserMenuOpen && (
+              <div
+                role="menu"
+                className="surface-card absolute right-0 top-12 z-50 w-56 rounded-2xl border border-white/70 p-2"
+              >
+                <div className="border-b border-slate-200/70 px-3 py-2">
+                  <p className="truncate text-xs font-semibold text-gray-900">{user?.name}</p>
+                  <p className="truncate text-[11px] text-slate-500">{user?.email}</p>
+                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-100/70 hover:text-slate-950"
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    void logout().then(() => navigate('/login', { replace: true }));
+                  }}
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

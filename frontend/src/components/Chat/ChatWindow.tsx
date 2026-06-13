@@ -50,12 +50,12 @@ export default function ChatWindow({ workflows }: Props) {
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
       {workflows.map((wf) => (
-        <Card key={wf.id} className="overflow-hidden">
+        <Card key={wf.id} className="overflow-hidden ring-1 ring-white/70 transition-transform duration-200 hover:-translate-y-0.5">
           <div className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-900">{wf.userInput}</p>
-                <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                   {wf.domain && <span>{wf.domain}</span>}
                   <span>·</span>
                   <span>{formatDistanceToNow(new Date(wf.createdAt), { addSuffix: true })}</span>
@@ -71,9 +71,9 @@ export default function ChatWindow({ workflows }: Props) {
               </Alert>
             )}
             {wf.steps.length > 0 && (
-              <ol className="mt-4 space-y-3 border-t border-gray-100 pt-4">
+              <ol className="mt-4 space-y-3 border-t border-slate-200/70 pt-4">
                 {wf.steps.map((step) => (
-                  <li key={step.index} className="flex items-start gap-3 text-xs text-gray-500">
+                  <li key={step.index} className="flex items-start gap-3 text-xs text-slate-500">
                     <span
                       className={`mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full font-medium ${STEP_MARKERS[step.state]}`}
                     >
@@ -85,9 +85,9 @@ export default function ChatWindow({ workflows }: Props) {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2">
                         <span className="font-semibold text-gray-700">{step.toolName}</span>
-                        <span className="text-gray-400">Step {step.index + 1}</span>
+                        <span className="font-mono text-slate-400">Step {step.index + 1}</span>
                       </div>
-                      <p className="mt-0.5 text-gray-500">{step.description}</p>
+                      <p className="mt-0.5 text-slate-500">{step.description}</p>
                     </div>
                   </li>
                 ))}

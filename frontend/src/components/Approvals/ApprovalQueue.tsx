@@ -59,11 +59,11 @@ export default function ApprovalQueue() {
   return (
     <div className="space-y-4">
       {pendingApprovals.map((approval) => (
-        <Card key={approval.id} className="overflow-hidden border-warning-100">
-          <div className="border-b border-warning-100 bg-warning-50 px-4 py-3 sm:px-5">
+        <Card key={approval.id} className="overflow-hidden border-warning-100 ring-1 ring-white/70">
+          <div className="ambient-line border-b border-warning-100/80 bg-warning-50/85 px-4 py-3 sm:px-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Badge tone="warning">{approval.triggerReason}</Badge>
-              <span className="text-xs text-warning-700">
+              <span className="font-mono text-xs text-warning-700">
                 Requested {formatDistanceToNow(new Date(approval.createdAt), { addSuffix: true })}
               </span>
             </div>
@@ -81,7 +81,7 @@ export default function ApprovalQueue() {
             </label>
             <textarea
               id={`rationale-${approval.id}`}
-              className="mb-3 min-h-24 w-full rounded-lg border border-gray-300 bg-white p-3 text-sm placeholder:text-gray-400"
+              className="mb-3 min-h-24 w-full rounded-lg border border-slate-300 bg-white/95 p-3 text-sm placeholder:text-slate-400"
               placeholder="Add a rationale. Required when rejecting."
               value={rationale[approval.id] ?? ''}
               onChange={(event) => {

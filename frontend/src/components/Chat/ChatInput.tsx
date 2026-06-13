@@ -38,7 +38,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t border-gray-200 bg-white p-4">
+    <form onSubmit={handleSubmit} className="ambient-line border-t border-slate-200/70 bg-white/60 p-4 backdrop-blur-sm">
       {error && (
         <Alert className="mb-3" role="alert" tone="danger">
           {error}
@@ -54,7 +54,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
           <button
             key={example}
             type="button"
-            className="shrink-0 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-600 transition-colors hover:border-brand-100 hover:bg-brand-50 hover:text-brand-700"
+            className="shrink-0 rounded-full border border-slate-200/90 bg-white/85 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50/70 hover:text-cyan-800"
             disabled={disabled || isSubmitting}
             onClick={() => {
               setError(null);
@@ -72,7 +72,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
         isLoading={isSubmitting}
         disabled={disabled || isSubmitting}
         maxHeight={180}
-        className="rounded-2xl border-gray-200 shadow-sm transition-shadow focus-within:border-brand-500 focus-within:shadow-md"
+        className="rounded-2xl border-slate-200 bg-white/95 shadow-sm transition-shadow focus-within:border-cyan-600 focus-within:shadow-md"
       >
         <PromptInputTextarea
           aria-label="Business request"
@@ -96,7 +96,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
           </Button>
         </PromptInputActions>
       </PromptInput>
-      <p className="mt-2 text-xs text-gray-400">Enter to send, Shift+Enter for a new line</p>
+      <p className="mt-2 font-mono text-xs text-slate-400">Enter to send, Shift+Enter for a new line</p>
     </form>
   );
 }

@@ -1,12 +1,20 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/geist';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply text-gray-900 antialiased;
+  background:
+    radial-gradient(76rem 50rem at -8% -8%, rgba(6, 95, 70, 0.2), transparent 58%),
+    radial-gradient(70rem 46rem at 108% -4%, rgba(14, 116, 144, 0.2), transparent 60%),
+    linear-gradient(180deg, #f6faf7 0%, #eef5f6 45%, #e7f0f3 100%);
+  min-height: 100vh;
 }
 
 button,
@@ -22,40 +30,42 @@ select {
 
 @layer base {
   :root {
-    --font-heading: var(--font-sans);
+    --font-heading: 'Space Grotesk', var(--font-sans);
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+      'Liberation Mono', 'Courier New', monospace;
     --font-sans: 'Geist Variable', sans-serif;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --background: oklch(0.985 0.004 244);
+    --foreground: oklch(0.23 0.025 245);
+    --card: oklch(0.995 0.003 244 / 97%);
+    --card-foreground: oklch(0.23 0.025 245);
+    --popover: oklch(0.995 0.003 244);
+    --popover-foreground: oklch(0.23 0.025 245);
+    --primary: oklch(0.44 0.13 228);
+    --primary-foreground: oklch(0.98 0.01 240);
+    --secondary: oklch(0.95 0.015 244);
+    --secondary-foreground: oklch(0.28 0.03 244);
+    --muted: oklch(0.96 0.01 244);
+    --muted-foreground: oklch(0.5 0.03 244);
+    --accent: oklch(0.93 0.03 208);
+    --accent-foreground: oklch(0.28 0.04 220);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --border: oklch(0.88 0.018 244);
+    --input: oklch(0.905 0.018 244);
+    --ring: oklch(0.63 0.11 226);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar: oklch(0.25 0.045 248);
+    --sidebar-foreground: oklch(0.96 0.01 242);
+    --sidebar-primary: oklch(0.63 0.12 226);
+    --sidebar-primary-foreground: oklch(0.985 0.01 240);
+    --sidebar-accent: oklch(0.33 0.05 246);
+    --sidebar-accent-foreground: oklch(0.98 0.008 242);
+    --sidebar-border: oklch(0.4 0.04 246);
+    --sidebar-ring: oklch(0.73 0.09 224);
   }
   .dark {
     --background: oklch(0.145 0 0);
@@ -102,5 +112,104 @@ select {
   }
   html {
     @apply font-sans;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-heading {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+
+  code,
+  pre,
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .surface-card {
+    @apply border border-white/65 bg-white/75 backdrop-blur-xl;
+    box-shadow:
+      0 22px 46px -30px rgba(15, 23, 42, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  .ambient-grid {
+    background-image:
+      linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+    background-size: 34px 34px;
+  }
+
+  .page-shell {
+    @apply relative overflow-hidden rounded-[1.4rem] border border-white/70 bg-white/65 backdrop-blur-xl;
+    box-shadow:
+      0 28px 56px -40px rgba(15, 23, 42, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  }
+
+  .page-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.08) 34%, transparent 100%),
+      radial-gradient(46rem 20rem at 0% -10%, rgba(20, 184, 166, 0.08), transparent 55%);
+    mix-blend-mode: screen;
+  }
+
+  .page-shell > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .ambient-line {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .ambient-line::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(14, 116, 144, 0.42) 20%, rgba(13, 148, 136, 0.45) 80%, transparent 100%);
+    opacity: 0.55;
+    z-index: -1;
+  }
+
+  .fade-up {
+    animation: fadeUp 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .fade-up-delay {
+    animation: fadeUp 520ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 10px, 0) scale(0.995);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fade-up,
+    .fade-up-delay {
+      animation: none;
+    }
   }
 }

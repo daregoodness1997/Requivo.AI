@@ -65,25 +65,26 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="grid min-h-screen bg-gray-50 lg:grid-cols-[1.05fr_0.95fr]">
-      <section className="relative hidden overflow-hidden bg-brand-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="absolute -right-24 -top-24 size-80 rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 size-80 rounded-full bg-indigo-400/15 blur-3xl" />
+    <main className="grid min-h-screen bg-[linear-gradient(180deg,#f6faf7_0%,#edf4f5_45%,#e8f0f3_100%)] lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="relative hidden overflow-hidden bg-[linear-gradient(180deg,#102f44_0%,#13283e_44%,#102233_100%)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div className="absolute -right-24 -top-24 size-80 rounded-full bg-cyan-500/20 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 size-80 rounded-full bg-emerald-400/15 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 ambient-grid opacity-25" />
         <div className="relative">
           <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-2xl bg-white/10">
+            <span className="flex size-11 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">
               <Sparkles className="size-6" />
             </span>
             <div>
-              <p className="text-xl font-bold">Requivo AI</p>
-              <p className="text-xs text-blue-200">Autonomous ERP operations</p>
+              <p className="font-heading text-xl font-bold">Requivo AI</p>
+              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Autonomous ERP operations</p>
             </div>
           </div>
           <div className="mt-24 max-w-xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-blue-300">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
               One intelligent workspace
             </p>
-            <h1 className="mt-5 text-5xl font-bold leading-[1.08] tracking-tight">
+            <h1 className="font-heading mt-5 text-5xl font-bold leading-[1.08] tracking-tight">
               Turn business requests into accountable action.
             </h1>
             <p className="mt-6 max-w-lg text-base leading-7 text-blue-100/80">
@@ -98,8 +99,8 @@ export default function LoginPage() {
             ['100%', 'Auditable'],
             ['MFA', 'Protected'],
           ].map(([value, label]) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-              <p className="text-2xl font-bold">{value}</p>
+            <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 ring-1 ring-white/5">
+              <p className="font-heading text-2xl font-bold">{value}</p>
               <p className="mt-1 text-xs text-blue-200">{label}</p>
             </div>
           ))}
@@ -118,7 +119,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <Card className="p-5 sm:p-7">
+          <Card className="p-5 sm:p-7 ring-1 ring-white/70">
             {challengeId ? (
               <>
                 <button

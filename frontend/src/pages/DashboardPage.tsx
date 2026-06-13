@@ -32,16 +32,18 @@ export default function DashboardPage() {
   }, [setPendingApprovals]);
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-5xl fade-up-delay">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-gray-500">
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Human in the loop</p>
+          <h2 className="font-heading text-2xl font-semibold tracking-tight text-slate-900">Approval Center</h2>
+          <p className="text-sm text-slate-500">
             Review the complete business context before making a decision.
           </p>
         </div>
-        <Card className="flex items-center gap-3 px-4 py-3">
+        <Card className="flex items-center gap-3 px-4 py-3 ring-1 ring-cyan-100/70">
           <span className="text-2xl font-bold text-gray-950">{pendingApprovals.length}</span>
-          <span className="text-xs leading-4 text-gray-500">
+          <span className="font-mono text-xs leading-4 text-slate-500">
             Pending
             <br />
             decisions

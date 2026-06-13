@@ -52,22 +52,26 @@ export default function AuditPage() {
   }, [entries, outcome, query]);
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <Card className="mb-5 flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+    <div className="mx-auto max-w-7xl fade-up-delay">
+      <div className="mb-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Traceability</p>
+        <h2 className="font-heading text-2xl font-semibold tracking-tight text-slate-900">Audit Timeline</h2>
+      </div>
+      <Card className="mb-5 flex flex-col gap-3 p-4 ring-1 ring-cyan-100/70 sm:flex-row sm:items-center">
         <label className="relative flex-1">
           <span className="sr-only">Search audit entries</span>
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <input
-            className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm placeholder:text-gray-400"
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white/90 pl-9 pr-3 text-sm placeholder:text-slate-400"
             placeholder="Search workflow, tool, action, or user"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <label className="flex items-center gap-2 text-xs font-medium text-gray-500">
+        <label className="flex items-center gap-2 text-xs font-medium text-slate-500">
           Outcome
           <select
-            className="h-10 min-w-40 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700"
+            className="h-10 min-w-40 rounded-lg border border-slate-200 bg-white/90 px-3 text-sm text-slate-700"
             value={outcome}
             onChange={(event) => setOutcome(event.target.value)}
           >
