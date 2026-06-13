@@ -45,9 +45,7 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
   const title =
     pathname === '/chat' && activeWorkflow ? getWorkflowTitle(activeWorkflow) : route.title;
   const description =
-    pathname === '/chat' && activeWorkflow
-      ? getWorkflowPreview(activeWorkflow)
-      : route.description;
+    pathname === '/chat' && activeWorkflow ? getWorkflowPreview(activeWorkflow) : route.description;
   const initials =
     user?.name
       .split(' ')

@@ -162,7 +162,9 @@ export default function ChatWindow({ workflows, onAction }: Props) {
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div>
-                                  <p className="text-xs font-semibold text-slate-800">{invoice.id}</p>
+                                  <p className="text-xs font-semibold text-slate-800">
+                                    {invoice.id}
+                                  </p>
                                   <p className="text-[11px] text-slate-500">{invoice.vendor}</p>
                                 </div>
                                 <Badge

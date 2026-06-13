@@ -114,8 +114,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 <p className="px-3 text-xs text-cyan-200/70">No chats yet</p>
               ) : (
                 sortedHistory.map((workflow) => {
-                  const isActiveChat =
-                    pathname === '/chat' && activeWorkflowId === workflow.id;
+                  const isActiveChat = pathname === '/chat' && activeWorkflowId === workflow.id;
 
                   return (
                     <NavLink

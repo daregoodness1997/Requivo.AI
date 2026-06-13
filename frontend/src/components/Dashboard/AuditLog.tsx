@@ -60,11 +60,7 @@ export default function AuditLog({ entries }: Props) {
                 <dd className="mt-1 text-gray-600">{entry.userId}</dd>
               </div>
             </dl>
-            <Button
-              variant="outline"
-              className="mt-4"
-              onClick={() => setSelectedEntryId(entry.id)}
-            >
+            <Button variant="outline" className="mt-4" onClick={() => setSelectedEntryId(entry.id)}>
               View details
             </Button>
           </Card>
@@ -74,11 +70,13 @@ export default function AuditLog({ entries }: Props) {
         <table className="min-w-full divide-y divide-slate-200/70 bg-white/60 text-sm backdrop-blur-sm">
           <thead className="bg-slate-50/85 text-xs font-semibold uppercase text-slate-500">
             <tr>
-              {['Time', 'Workflow', 'Tool', 'Action', 'User', 'Outcome', 'Details'].map((heading) => (
-                <th key={heading} className="px-4 py-3 text-left">
-                  {heading}
-                </th>
-              ))}
+              {['Time', 'Workflow', 'Tool', 'Action', 'User', 'Outcome', 'Details'].map(
+                (heading) => (
+                  <th key={heading} className="px-4 py-3 text-left">
+                    {heading}
+                  </th>
+                ),
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200/70">
@@ -102,11 +100,7 @@ export default function AuditLog({ entries }: Props) {
                   <Badge tone={outcomeTone(entry.outcome)}>{entry.outcome}</Badge>
                 </td>
                 <td className="px-4 py-3">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedEntryId(entry.id)}
-                  >
+                  <Button size="sm" variant="outline" onClick={() => setSelectedEntryId(entry.id)}>
                     View details
                   </Button>
                 </td>
@@ -131,7 +125,9 @@ export default function AuditLog({ entries }: Props) {
           <dl className="grid grid-cols-1 gap-4 text-sm text-slate-700 sm:grid-cols-2">
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-500">Entry ID</dt>
-              <dd className="mt-1 break-all font-mono text-xs text-slate-700">{selectedEntry.id}</dd>
+              <dd className="mt-1 break-all font-mono text-xs text-slate-700">
+                {selectedEntry.id}
+              </dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-slate-500">Workflow ID</dt>

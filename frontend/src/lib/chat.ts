@@ -15,7 +15,9 @@ function buildTitleFromInput(input: string) {
   const normalized = compact(input);
   const lower = normalized.toLowerCase();
 
-  if (/\b(list|show|view)\b.*\binvoices?\b|\binvoices?\b.*\b(list|show|view|due|open)\b/.test(lower)) {
+  if (
+    /\b(list|show|view)\b.*\binvoices?\b|\binvoices?\b.*\b(list|show|view|due|open)\b/.test(lower)
+  ) {
     if (/\boverdue\b/.test(lower)) return 'Overdue Invoices';
     if (/\bpaid\b/.test(lower)) return 'Paid Invoices';
     if (/\bdue|open|unpaid\b/.test(lower)) return 'Due Invoices';

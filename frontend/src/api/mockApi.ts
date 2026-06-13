@@ -460,8 +460,7 @@ function inferDomain(input: string): WorkflowDomain {
 function isInvoiceListRequest(input: string) {
   const normalized = input.toLowerCase();
   return (
-    /\binvoices\b/.test(normalized) &&
-    /(list|show|view|all|due|overdue|open)/.test(normalized)
+    /\binvoices\b/.test(normalized) && /(list|show|view|all|due|overdue|open)/.test(normalized)
   );
 }
 
@@ -477,7 +476,9 @@ function getFinanceInvoicesForPrompt(input: string) {
   }
 
   if (/\bdue\b|\bopen\b|\bunpaid\b/.test(normalized)) {
-    return financeInvoices.filter((invoice) => invoice.status === 'Due' || invoice.status === 'Overdue');
+    return financeInvoices.filter(
+      (invoice) => invoice.status === 'Due' || invoice.status === 'Overdue',
+    );
   }
 
   return financeInvoices;
@@ -485,7 +486,9 @@ function getFinanceInvoicesForPrompt(input: string) {
 
 function isReadOnlyFinanceRequest(input: string) {
   const normalized = input.toLowerCase();
-  return isInvoiceListRequest(normalized) || /\bview invoice\b|\binvoice details\b/.test(normalized);
+  return (
+    isInvoiceListRequest(normalized) || /\bview invoice\b|\binvoice details\b/.test(normalized)
+  );
 }
 
 function buildStepsForInput(input: string, domain: WorkflowDomain): WorkflowStep[] {
