@@ -38,7 +38,10 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="ambient-line border-t border-slate-200/70 bg-white/60 p-4 backdrop-blur-sm">
+    <form
+      onSubmit={handleSubmit}
+      className="ambient-line border-t border-slate-200/70 bg-white/60 p-4 backdrop-blur-sm"
+    >
       {error && (
         <Alert className="mb-3" role="alert" tone="danger">
           {error}
@@ -96,7 +99,9 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
           </Button>
         </PromptInputActions>
       </PromptInput>
-      <p className="mt-2 font-mono text-xs text-slate-400">Enter to send, Shift+Enter for a new line</p>
+      <p className="mt-2 font-mono text-xs text-slate-400">
+        Enter to send, Shift+Enter for a new line
+      </p>
     </form>
   );
 }

@@ -138,7 +138,9 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
               >
                 <div className="ambient-line flex items-center justify-between border-b border-slate-200/70 px-4 py-3">
                   <div>
-                    <p className="font-heading text-sm font-semibold text-gray-950">Notifications</p>
+                    <p className="font-heading text-sm font-semibold text-gray-950">
+                      Notifications
+                    </p>
                     <p className="text-xs text-slate-500">
                       {pendingCount
                         ? `${pendingCount} approval${pendingCount === 1 ? '' : 's'} need your attention`

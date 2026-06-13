@@ -40,7 +40,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             </span>
             <div>
               <p className="font-heading text-base font-bold tracking-tight">Requivo AI</p>
-              <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-200/85">ERP operations agent</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-200/85">
+                ERP operations agent
+              </p>
             </div>
           </NavLink>
           <Button
@@ -86,7 +88,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               Local data is active until backend integration.
             </p>
           </div>
-          <p className="mt-4 px-1 font-mono text-[11px] tracking-wide text-cyan-300/75">v0.2.0 · Lumenware Technologies</p>
+          <p className="mt-4 px-1 font-mono text-[11px] tracking-wide text-cyan-300/75">
+            v0.2.0 · Lumenware Technologies
+          </p>
         </div>
       </aside>
     </>

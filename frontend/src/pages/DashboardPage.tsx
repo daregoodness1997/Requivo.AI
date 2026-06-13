@@ -35,8 +35,12 @@ export default function DashboardPage() {
     <div className="mx-auto max-w-5xl fade-up-delay">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Human in the loop</p>
-          <h2 className="font-heading text-2xl font-semibold tracking-tight text-slate-900">Approval Center</h2>
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
+            Human in the loop
+          </p>
+          <h2 className="font-heading text-2xl font-semibold tracking-tight text-slate-900">
+            Approval Center
+          </h2>
           <p className="text-sm text-slate-500">
             Review the complete business context before making a decision.
           </p>

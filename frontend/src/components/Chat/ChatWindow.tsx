@@ -50,7 +50,10 @@ export default function ChatWindow({ workflows }: Props) {
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
       {workflows.map((wf) => (
-        <Card key={wf.id} className="overflow-hidden ring-1 ring-white/70 transition-transform duration-200 hover:-translate-y-0.5">
+        <Card
+          key={wf.id}
+          className="overflow-hidden ring-1 ring-white/70 transition-transform duration-200 hover:-translate-y-0.5"
+        >
           <div className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">

@@ -77,7 +77,9 @@ export default function LoginPage() {
             </span>
             <div>
               <p className="font-heading text-xl font-bold">Requivo AI</p>
-              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">Autonomous ERP operations</p>
+              <p className="text-xs uppercase tracking-[0.14em] text-cyan-200">
+                Autonomous ERP operations
+              </p>
             </div>
           </div>
           <div className="mt-24 max-w-xl">
@@ -99,7 +101,10 @@ export default function LoginPage() {
             ['100%', 'Auditable'],
             ['MFA', 'Protected'],
           ].map(([value, label]) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 ring-1 ring-white/5">
+            <div
+              key={label}
+              className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 ring-1 ring-white/5"
+            >
               <p className="font-heading text-2xl font-bold">{value}</p>
               <p className="mt-1 text-xs text-blue-200">{label}</p>
             </div>

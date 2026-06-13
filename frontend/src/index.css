@@ -31,8 +31,9 @@ select {
 @layer base {
   :root {
     --font-heading: 'Space Grotesk', var(--font-sans);
-    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-      'Liberation Mono', 'Courier New', monospace;
+    --font-mono:
+      'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+      'Courier New', monospace;
     --font-sans: 'Geist Variable', sans-serif;
     --background: oklch(0.985 0.004 244);
     --foreground: oklch(0.23 0.025 245);
@@ -161,7 +162,12 @@ select {
     inset: 0;
     pointer-events: none;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.08) 34%, transparent 100%),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.52) 0%,
+        rgba(255, 255, 255, 0.08) 34%,
+        transparent 100%
+      ),
       radial-gradient(46rem 20rem at 0% -10%, rgba(20, 184, 166, 0.08), transparent 55%);
     mix-blend-mode: screen;
   }
@@ -182,7 +188,13 @@ select {
     inset-inline: 0;
     bottom: -1px;
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(14, 116, 144, 0.42) 20%, rgba(13, 148, 136, 0.45) 80%, transparent 100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(14, 116, 144, 0.42) 20%,
+      rgba(13, 148, 136, 0.45) 80%,
+      transparent 100%
+    );
     opacity: 0.55;
     z-index: -1;
   }

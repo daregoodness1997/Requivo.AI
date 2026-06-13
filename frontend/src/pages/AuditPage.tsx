@@ -54,8 +54,12 @@ export default function AuditPage() {
   return (
     <div className="mx-auto max-w-7xl fade-up-delay">
       <div className="mb-4">
-        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">Traceability</p>
-        <h2 className="font-heading text-2xl font-semibold tracking-tight text-slate-900">Audit Timeline</h2>
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
+          Traceability
+        </p>
+        <h2 className="font-heading text-2xl font-semibold tracking-tight text-slate-900">
+          Audit Timeline
+        </h2>
       </div>
       <Card className="mb-5 flex flex-col gap-3 p-4 ring-1 ring-cyan-100/70 sm:flex-row sm:items-center">
         <label className="relative flex-1">
