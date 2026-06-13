@@ -13,6 +13,52 @@ const latency = (ms = 350) => new Promise((resolve) => window.setTimeout(resolve
 const clone = <T>(value: T): T => structuredClone(value);
 const isoAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
+type InvoiceStatus = 'Due' | 'Paid' | 'Overdue';
+
+interface InvoiceRecord {
+  id: string;
+  vendor: string;
+  amount: number;
+  currency: string;
+  dueDate: string;
+  status: InvoiceStatus;
+}
+
+const financeInvoices: InvoiceRecord[] = [
+  {
+    id: 'INV-2041',
+    vendor: 'Acme Corp',
+    amount: 4500,
+    currency: 'USD',
+    dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'Due',
+  },
+  {
+    id: 'INV-2087',
+    vendor: 'Northwind Logistics',
+    amount: 1250,
+    currency: 'USD',
+    dueDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'Due',
+  },
+  {
+    id: 'INV-1994',
+    vendor: 'Delta Office Supplies',
+    amount: 980,
+    currency: 'USD',
+    dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'Overdue',
+  },
+  {
+    id: 'INV-1908',
+    vendor: 'City Utilities',
+    amount: 730,
+    currency: 'USD',
+    dueDate: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+    status: 'Paid',
+  },
+];
+
 const completedStep = (
   index: number,
   toolName: string,
@@ -29,6 +75,215 @@ const completedStep = (
 });
 
 const workflows: Workflow[] = [
+  {
+    id: 'wf-demo-invoices-due',
+    userInput: 'List all due invoices',
+    domain: 'Finance',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'FinanceTool', 'Retrieve invoices from Accounts Payable', 4),
+      {
+        index: 1,
+        toolName: 'FinanceTool',
+        description: 'Prepare invoice list with available actions',
+        state: 'Completed',
+        output: {
+          type: 'invoice_list',
+          count: 3,
+          items: [
+            {
+              id: 'INV-2041',
+              vendor: 'Acme Corp',
+              amount: 4500,
+              currency: 'USD',
+              dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'Due',
+              actions: [
+                {
+                  key: 'view',
+                  label: 'View invoice',
+                  prompt: 'View invoice INV-2041 details',
+                },
+                {
+                  key: 'pay',
+                  label: 'Pay invoice',
+                  prompt: 'Pay invoice INV-2041 to Acme Corp for $4,500',
+                },
+              ],
+            },
+            {
+              id: 'INV-2087',
+              vendor: 'Northwind Logistics',
+              amount: 1250,
+              currency: 'USD',
+              dueDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'Due',
+              actions: [
+                {
+                  key: 'view',
+                  label: 'View invoice',
+                  prompt: 'View invoice INV-2087 details',
+                },
+                {
+                  key: 'pay',
+                  label: 'Pay invoice',
+                  prompt: 'Pay invoice INV-2087 to Northwind Logistics for $1,250',
+                },
+              ],
+            },
+            {
+              id: 'INV-1994',
+              vendor: 'Delta Office Supplies',
+              amount: 980,
+              currency: 'USD',
+              dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'Overdue',
+              actions: [
+                {
+                  key: 'view',
+                  label: 'View invoice',
+                  prompt: 'View invoice INV-1994 details',
+                },
+                {
+                  key: 'pay',
+                  label: 'Pay invoice',
+                  prompt: 'Pay invoice INV-1994 to Delta Office Supplies for $980',
+                },
+              ],
+            },
+          ],
+        },
+        startedAt: isoAgo(4),
+        completedAt: isoAgo(3),
+      },
+    ],
+    createdAt: isoAgo(6),
+    updatedAt: isoAgo(3),
+  },
+  {
+    id: 'wf-demo-invoices-overdue',
+    userInput: 'Show all overdue invoices',
+    domain: 'Finance',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'FinanceTool', 'Retrieve invoices from Accounts Payable', 8),
+      completedStep(1, 'FinanceTool', 'Prepare invoice list with available actions', 7),
+    ],
+    createdAt: isoAgo(9),
+    updatedAt: isoAgo(7),
+  },
+  {
+    id: 'wf-demo-view-invoice',
+    userInput: 'View invoice INV-2041 details',
+    domain: 'Finance',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'FinanceTool', 'Validate invoice reference and vendor context', 11),
+      completedStep(1, 'FinanceTool', 'Retrieve full invoice details and attachments', 10),
+      completedStep(2, 'FinanceTool', 'Present invoice summary for review', 9),
+    ],
+    createdAt: isoAgo(12),
+    updatedAt: isoAgo(9),
+  },
+  {
+    id: 'wf-demo-sales-orders',
+    userInput: 'Show pending sales orders this week',
+    domain: 'Sales',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'SalesTool', 'Filter sales orders for current week', 13),
+      completedStep(1, 'SalesTool', 'Identify pending statuses and blockers', 12),
+      completedStep(2, 'SalesTool', 'Prepare pending order summary', 11),
+    ],
+    createdAt: isoAgo(14),
+    updatedAt: isoAgo(11),
+  },
+  {
+    id: 'wf-demo-low-stock',
+    userInput: 'Show low-stock SKUs in warehouse A',
+    domain: 'Inventory',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'InventoryTool', 'Retrieve stock levels for warehouse A', 16),
+      completedStep(1, 'InventoryTool', 'Apply low-stock thresholds by SKU', 15),
+      completedStep(2, 'InventoryTool', 'Prepare replenishment shortlist', 14),
+    ],
+    createdAt: isoAgo(18),
+    updatedAt: isoAgo(14),
+  },
+  {
+    id: 'wf-demo-sales-quote',
+    userInput: 'Create a quote for customer ACME-442',
+    domain: 'Sales',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'SalesTool', 'Load customer profile and pricing terms', 20),
+      completedStep(1, 'SalesTool', 'Draft quote line items and totals', 19),
+      completedStep(2, 'SalesTool', 'Prepare quote for confirmation', 18),
+    ],
+    createdAt: isoAgo(21),
+    updatedAt: isoAgo(18),
+  },
+  {
+    id: 'wf-demo-leave-requests',
+    userInput: 'List pending leave requests this month',
+    domain: 'HR',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'HRTool', 'Fetch leave requests for current month', 24),
+      completedStep(1, 'HRTool', 'Filter requests in pending status', 23),
+      completedStep(2, 'HRTool', 'Prepare leave request queue', 22),
+    ],
+    createdAt: isoAgo(25),
+    updatedAt: isoAgo(22),
+  },
+  {
+    id: 'wf-demo-onboarding',
+    userInput: 'Start onboarding workflow for Jane Doe',
+    domain: 'HR',
+    state: 'WaitingApproval',
+    steps: [
+      completedStep(0, 'HRTool', 'Validate employee profile and start date', 28),
+      completedStep(1, 'HRTool', 'Prepare onboarding checklist and account provisioning', 27),
+      {
+        index: 2,
+        toolName: 'HRTool',
+        description: 'Request HR approval to start onboarding process',
+        state: 'WaitingApproval',
+        output: { status: 'pending_approval' },
+        startedAt: isoAgo(26),
+        completedAt: null,
+      },
+    ],
+    createdAt: isoAgo(29),
+    updatedAt: isoAgo(26),
+  },
+  {
+    id: 'wf-demo-open-po',
+    userInput: 'List open purchase orders awaiting approval',
+    domain: 'Procurement',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'ProcurementTool', 'Retrieve open purchase orders', 31),
+      completedStep(1, 'ProcurementTool', 'Filter orders awaiting approval', 30),
+      completedStep(2, 'ProcurementTool', 'Prepare approval queue summary', 29),
+    ],
+    createdAt: isoAgo(32),
+    updatedAt: isoAgo(29),
+  },
+  {
+    id: 'wf-demo-kpi-monthly',
+    userInput: 'Generate KPI summary for this month',
+    domain: 'Reporting',
+    state: 'Completed',
+    steps: [
+      completedStep(0, 'ReportingTool', 'Validate monthly KPI filter set', 34),
+      completedStep(1, 'ReportingTool', 'Aggregate KPI metrics from ERP modules', 33),
+      completedStep(2, 'ReportingTool', 'Generate KPI summary output', 32),
+    ],
+    createdAt: isoAgo(35),
+    updatedAt: isoAgo(32),
+  },
   {
     id: 'wf-demo-reporting',
     userInput: 'Show procurement spend by supplier for last quarter',
@@ -88,6 +343,19 @@ const workflows: Workflow[] = [
 ];
 
 const approvals: ApprovalRequest[] = [
+  {
+    id: 'approval-demo-hr',
+    workflowId: 'wf-demo-onboarding',
+    triggerReason: 'Employee lifecycle action',
+    proposedAction: 'Start onboarding workflow for Jane Doe',
+    businessContext:
+      'A new hire start date is approaching and onboarding tasks require HR approval before execution.',
+    decision: 'Pending',
+    decidedBy: null,
+    rationale: null,
+    decidedAt: null,
+    createdAt: isoAgo(26),
+  },
   {
     id: 'approval-demo-po',
     workflowId: 'wf-demo-procurement',
@@ -189,6 +457,72 @@ function inferDomain(input: string): WorkflowDomain {
   return 'Reporting';
 }
 
+function isInvoiceListRequest(input: string) {
+  const normalized = input.toLowerCase();
+  return (
+    /\binvoices\b/.test(normalized) &&
+    /(list|show|view|all|due|overdue|open)/.test(normalized)
+  );
+}
+
+function getFinanceInvoicesForPrompt(input: string) {
+  const normalized = input.toLowerCase();
+
+  if (/\boverdue\b/.test(normalized)) {
+    return financeInvoices.filter((invoice) => invoice.status === 'Overdue');
+  }
+
+  if (/\bpaid\b/.test(normalized)) {
+    return financeInvoices.filter((invoice) => invoice.status === 'Paid');
+  }
+
+  if (/\bdue\b|\bopen\b|\bunpaid\b/.test(normalized)) {
+    return financeInvoices.filter((invoice) => invoice.status === 'Due' || invoice.status === 'Overdue');
+  }
+
+  return financeInvoices;
+}
+
+function isReadOnlyFinanceRequest(input: string) {
+  const normalized = input.toLowerCase();
+  return isInvoiceListRequest(normalized) || /\bview invoice\b|\binvoice details\b/.test(normalized);
+}
+
+function buildStepsForInput(input: string, domain: WorkflowDomain): WorkflowStep[] {
+  if (domain === 'Finance' && isInvoiceListRequest(input)) {
+    return [
+      {
+        index: 0,
+        toolName: 'FinanceTool',
+        description: 'Retrieve invoices from Accounts Payable',
+        state: 'Pending',
+        output: null,
+        startedAt: null,
+        completedAt: null,
+      },
+      {
+        index: 1,
+        toolName: 'FinanceTool',
+        description: 'Prepare invoice list with available actions',
+        state: 'Pending',
+        output: null,
+        startedAt: null,
+        completedAt: null,
+      },
+    ];
+  }
+
+  return domainSteps[domain].map(([toolName, description], index) => ({
+    index,
+    toolName,
+    description,
+    state: 'Pending',
+    output: null,
+    startedAt: null,
+    completedAt: null,
+  }));
+}
+
 function requiresApproval(domain: WorkflowDomain) {
   return domain === 'Procurement' || domain === 'Finance' || domain === 'HR';
 }
@@ -234,6 +568,7 @@ async function runWorkflow(id: string) {
 
     const isApprovalGate =
       requiresApproval(workflow.domain ?? 'Reporting') &&
+      !isReadOnlyFinanceRequest(workflow.userInput) &&
       step === workflow.steps[workflow.steps.length - 1];
     if (isApprovalGate) {
       step.state = 'WaitingApproval';
@@ -263,7 +598,46 @@ async function runWorkflow(id: string) {
 
     step.state = 'Completed';
     step.completedAt = new Date().toISOString();
-    step.output = { status: 'ok', source: 'frontend-demo' };
+    if (
+      workflow.domain === 'Finance' &&
+      isInvoiceListRequest(workflow.userInput) &&
+      step.index === workflow.steps.length - 1
+    ) {
+      const invoices = getFinanceInvoicesForPrompt(workflow.userInput);
+      step.output = {
+        type: 'invoice_list',
+        count: invoices.length,
+        items: invoices.map((invoice) => {
+          const canPay = invoice.status === 'Due' || invoice.status === 'Overdue';
+          return {
+            id: invoice.id,
+            vendor: invoice.vendor,
+            amount: invoice.amount,
+            currency: invoice.currency,
+            dueDate: invoice.dueDate,
+            status: invoice.status,
+            actions: [
+              {
+                key: 'view',
+                label: 'View invoice',
+                prompt: `View invoice ${invoice.id} details`,
+              },
+              ...(canPay
+                ? [
+                    {
+                      key: 'pay',
+                      label: 'Pay invoice',
+                      prompt: `Pay invoice ${invoice.id} to ${invoice.vendor} for $${invoice.amount.toLocaleString()}`,
+                    },
+                  ]
+                : []),
+            ],
+          };
+        }),
+      };
+    } else {
+      step.output = { status: 'ok', source: 'frontend-demo' };
+    }
     addAudit(workflow, step, 'Success');
   }
 
@@ -302,15 +676,7 @@ export const mockWorkflowApi = {
       userInput: body.userInput,
       domain,
       state: 'Pending',
-      steps: domainSteps[domain].map(([toolName, description], index) => ({
-        index,
-        toolName,
-        description,
-        state: 'Pending',
-        output: null,
-        startedAt: null,
-        completedAt: null,
-      })),
+      steps: buildStepsForInput(body.userInput, domain),
       createdAt: now,
       updatedAt: now,
     };

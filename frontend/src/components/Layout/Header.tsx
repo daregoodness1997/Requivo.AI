@@ -5,6 +5,7 @@ import Badge from '@/components/ui/Badge';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 import { useWorkflowStore } from '@/store/workflowStore';
+import { getWorkflowPreview, getWorkflowTitle } from '@/lib/chat';
 
 const routeTitles: Record<string, { title: string; description: string }> = {
   '/chat': {
@@ -27,6 +28,8 @@ interface HeaderProps {
 
 export default function Header({ onOpenNavigation }: HeaderProps) {
   const pendingApprovals = useWorkflowStore((state) => state.pendingApprovals);
+  const activeWorkflowId = useWorkflowStore((state) => state.activeWorkflowId);
+  const workflows = useWorkflowStore((state) => state.workflows);
   const pendingCount = pendingApprovals.length;
   const { user, logout } = useAuthStore();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -36,6 +39,15 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const route = routeTitles[pathname] ?? routeTitles['/chat'];
+  const activeWorkflow = activeWorkflowId
+    ? workflows.find((workflow) => workflow.id === activeWorkflowId)
+    : null;
+  const title =
+    pathname === '/chat' && activeWorkflow ? getWorkflowTitle(activeWorkflow) : route.title;
+  const description =
+    pathname === '/chat' && activeWorkflow
+      ? getWorkflowPreview(activeWorkflow)
+      : route.description;
   const initials =
     user?.name
       .split(' ')
@@ -95,9 +107,9 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
               Operations workspace
             </p>
             <h1 className="font-heading truncate text-sm font-semibold tracking-tight text-gray-950 sm:text-base">
-              {route.title}
+              {title}
             </h1>
-            <p className="hidden truncate text-xs text-slate-500 sm:block">{route.description}</p>
+            <p className="hidden truncate text-xs text-slate-500 sm:block">{description}</p>
           </div>
         </div>
 

@@ -5,6 +5,8 @@ import Badge from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
+import { useWorkflowStore } from '@/store/workflowStore';
+import { getWorkflowPreview, getWorkflowTitle } from '@/lib/chat';
 
 const STATE_TONES = {
   Pending: 'neutral',
@@ -35,9 +37,50 @@ const STEP_ICONS = {
 
 interface Props {
   workflows: Workflow[];
+  onAction?: (prompt: string) => Promise<unknown> | unknown;
 }
 
-export default function ChatWindow({ workflows }: Props) {
+interface InvoiceAction {
+  key: string;
+  label: string;
+  prompt: string;
+}
+
+interface InvoiceItem {
+  id: string;
+  vendor: string;
+  amount: number;
+  currency: string;
+  dueDate: string;
+  status: 'Due' | 'Paid' | 'Overdue' | string;
+  actions: InvoiceAction[];
+}
+
+interface InvoiceListOutput {
+  type: 'invoice_list';
+  count: number;
+  items: InvoiceItem[];
+}
+
+function isInvoiceListOutput(value: unknown): value is InvoiceListOutput {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as { type?: unknown; items?: unknown };
+  return candidate.type === 'invoice_list' && Array.isArray(candidate.items);
+}
+
+function formatMoney(value: number, currency: string) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
+}
+
+const OUTPUT_BADGE_TONES = {
+  Due: 'warning',
+  Overdue: 'danger',
+  Paid: 'success',
+} as const;
+
+export default function ChatWindow({ workflows, onAction }: Props) {
+  const activeWorkflowId = useWorkflowStore((state) => state.activeWorkflowId);
+
   if (!workflows.length) {
     return (
       <EmptyState
@@ -47,17 +90,33 @@ export default function ChatWindow({ workflows }: Props) {
     );
   }
 
+  if (activeWorkflowId === null) {
+    return (
+      <EmptyState
+        title="New chat"
+        description="Start a new ERP assistant request, or pick a previous chat from the sidebar history."
+      />
+    );
+  }
+
+  const visibleWorkflows = activeWorkflowId
+    ? workflows.filter((workflow) => workflow.id === activeWorkflowId)
+    : workflows;
+
+  const chatsToRender = visibleWorkflows.length > 0 ? visibleWorkflows : workflows;
+
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
-      {workflows.map((wf) => (
+      {chatsToRender.map((wf) => (
         <Card
           key={wf.id}
-          className="flex max-h-[32rem] flex-col overflow-hidden ring-1 ring-white/70 transition-transform duration-200 hover:-translate-y-0.5"
+          className="flex flex-col ring-1 ring-white/70 transition-transform duration-200 hover:-translate-y-0.5"
         >
-          <div className="min-h-0 overflow-y-auto p-4 sm:p-5">
+          <div className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900">{wf.userInput}</p>
+                <p className="text-sm font-semibold text-gray-900">{getWorkflowTitle(wf)}</p>
+                <p className="mt-0.5 text-xs text-slate-500">{getWorkflowPreview(wf)}</p>
                 <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                   {wf.domain && <span>{wf.domain}</span>}
                   <span>·</span>
@@ -91,6 +150,54 @@ export default function ChatWindow({ workflows }: Props) {
                         <span className="font-mono text-slate-400">Step {step.index + 1}</span>
                       </div>
                       <p className="mt-0.5 text-slate-500">{step.description}</p>
+                      {isInvoiceListOutput(step.output) && (
+                        <div className="mt-3 space-y-2 rounded-xl border border-slate-200 bg-slate-50/75 p-3">
+                          <p className="text-xs font-medium text-slate-600">
+                            {step.output.count} invoice{step.output.count === 1 ? '' : 's'} found
+                          </p>
+                          {step.output.items.map((invoice) => (
+                            <div
+                              key={invoice.id}
+                              className="rounded-lg border border-slate-200 bg-white px-3 py-2"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                  <p className="text-xs font-semibold text-slate-800">{invoice.id}</p>
+                                  <p className="text-[11px] text-slate-500">{invoice.vendor}</p>
+                                </div>
+                                <Badge
+                                  className="shrink-0"
+                                  tone={
+                                    OUTPUT_BADGE_TONES[
+                                      invoice.status as keyof typeof OUTPUT_BADGE_TONES
+                                    ] ?? 'neutral'
+                                  }
+                                >
+                                  {invoice.status}
+                                </Badge>
+                              </div>
+                              <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+                                <span>{formatMoney(invoice.amount, invoice.currency)}</span>
+                                <span>Due {new Date(invoice.dueDate).toLocaleDateString()}</span>
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {invoice.actions.map((action) => (
+                                  <button
+                                    key={`${invoice.id}-${action.key}`}
+                                    type="button"
+                                    onClick={() => {
+                                      void onAction?.(action.prompt);
+                                    }}
+                                    className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-cyan-300 hover:bg-cyan-50 hover:text-cyan-800"
+                                  >
+                                    {action.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </li>
                 ))}

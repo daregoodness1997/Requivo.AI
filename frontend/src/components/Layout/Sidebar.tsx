@@ -1,7 +1,10 @@
-import { ClipboardCheck, FileClock, MessageSquareText, Sparkles, X } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
+import { ClipboardCheck, FileClock, MessageSquareText, Plus, Sparkles, X } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useWorkflowStore } from '@/store/workflowStore';
+import { getWorkflowPreview, getWorkflowTitle } from '@/lib/chat';
 
 const links = [
   { to: '/chat', label: 'Chat', icon: MessageSquareText },
@@ -15,6 +18,15 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
+  const pathname = useLocation().pathname;
+  const workflows = useWorkflowStore((state) => state.workflows);
+  const activeWorkflowId = useWorkflowStore((state) => state.activeWorkflowId);
+  const setActiveWorkflow = useWorkflowStore((state) => state.setActiveWorkflow);
+
+  const sortedHistory = [...workflows].sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+
   return (
     <>
       <button
@@ -55,28 +67,98 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <X />
           </Button>
         </div>
-        <nav className="flex-1 space-y-1 px-3 py-5">
-          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
-            Workspace
-          </p>
-          {links.map(({ to, label, icon: Icon }) => (
+        <nav className="flex flex-1 flex-col overflow-hidden px-3 py-5">
+          <div className="space-y-1">
+            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
+              Workspace
+            </p>
+            {links.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:ring-white/70',
+                    isActive
+                      ? 'bg-white/95 text-slate-900 shadow-[0_14px_28px_-18px_rgba(2,132,199,0.8)]'
+                      : 'text-cyan-100/95 hover:bg-white/10 hover:text-white',
+                  )
+                }
+              >
+                <Icon className="size-[18px]" />
+                {label}
+              </NavLink>
+            ))}
+          </div>
+
+          <div className="mt-4 min-h-0 flex-1 border-t border-white/10 pt-4">
+            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-200/80">
+              Chat History
+            </p>
+
             <NavLink
-              key={to}
-              to={to}
-              onClick={onClose}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:ring-white/70',
-                  isActive
-                    ? 'bg-white/95 text-slate-900 shadow-[0_14px_28px_-18px_rgba(2,132,199,0.8)]'
-                    : 'text-cyan-100/95 hover:bg-white/10 hover:text-white',
-                )
-              }
+              to="/chat"
+              onClick={() => {
+                setActiveWorkflow(null);
+                onClose();
+              }}
+              className="mb-2 flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
             >
-              <Icon className="size-[18px]" />
-              {label}
+              <Plus className="size-4" />
+              New chat
             </NavLink>
-          ))}
+
+            <div className="h-full space-y-1 overflow-y-auto pr-1">
+              {sortedHistory.length === 0 ? (
+                <p className="px-3 text-xs text-cyan-200/70">No chats yet</p>
+              ) : (
+                sortedHistory.map((workflow) => {
+                  const isActiveChat =
+                    pathname === '/chat' && activeWorkflowId === workflow.id;
+
+                  return (
+                    <NavLink
+                      key={workflow.id}
+                      to="/chat"
+                      onClick={() => {
+                        setActiveWorkflow(workflow.id);
+                        onClose();
+                      }}
+                      className={cn(
+                        'block rounded-xl px-3 py-2 text-left transition-colors',
+                        isActiveChat
+                          ? 'bg-white/95 text-slate-900 shadow-[0_14px_28px_-18px_rgba(2,132,199,0.8)]'
+                          : 'text-cyan-100/95 hover:bg-white/10 hover:text-white',
+                      )}
+                    >
+                      <p className="line-clamp-2 text-sm font-medium leading-5">
+                        {getWorkflowTitle(workflow)}
+                      </p>
+                      <p
+                        className={cn(
+                          'mt-1 line-clamp-2 text-[11px] leading-4',
+                          isActiveChat ? 'text-slate-500' : 'text-cyan-200/80',
+                        )}
+                      >
+                        {getWorkflowPreview(workflow)}
+                      </p>
+                      <p
+                        className={cn(
+                          'mt-1 text-[11px]',
+                          isActiveChat ? 'text-slate-500' : 'text-cyan-200/70',
+                        )}
+                      >
+                        {formatDistanceToNow(new Date(workflow.updatedAt), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </NavLink>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </nav>
         <div className="ambient-line border-t border-white/10 p-4">
           <div className="rounded-xl bg-white/[0.08] px-3 py-3 ring-1 ring-white/10">

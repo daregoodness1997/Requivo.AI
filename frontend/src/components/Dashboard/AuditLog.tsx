@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import type { AuditEntry } from '@/types';
 import { format, formatDistanceToNow } from 'date-fns';
 import Badge from '@/components/ui/Badge';
+import { Button } from '@/components/ui/button';
 import Card from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
 
@@ -15,6 +17,10 @@ function outcomeTone(outcome: string) {
 }
 
 export default function AuditLog({ entries }: Props) {
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(entries[0]?.id ?? null);
+  const selectedEntry =
+    entries.find((entry) => entry.id === selectedEntryId) ?? (entries.length ? entries[0] : null);
+
   if (!entries.length) {
     return (
       <Card className="min-h-64">
@@ -54,6 +60,13 @@ export default function AuditLog({ entries }: Props) {
                 <dd className="mt-1 text-gray-600">{entry.userId}</dd>
               </div>
             </dl>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => setSelectedEntryId(entry.id)}
+            >
+              View details
+            </Button>
           </Card>
         ))}
       </div>
@@ -61,7 +74,7 @@ export default function AuditLog({ entries }: Props) {
         <table className="min-w-full divide-y divide-slate-200/70 bg-white/60 text-sm backdrop-blur-sm">
           <thead className="bg-slate-50/85 text-xs font-semibold uppercase text-slate-500">
             <tr>
-              {['Time', 'Workflow', 'Tool', 'Action', 'User', 'Outcome'].map((heading) => (
+              {['Time', 'Workflow', 'Tool', 'Action', 'User', 'Outcome', 'Details'].map((heading) => (
                 <th key={heading} className="px-4 py-3 text-left">
                   {heading}
                 </th>
@@ -70,7 +83,12 @@ export default function AuditLog({ entries }: Props) {
           </thead>
           <tbody className="divide-y divide-slate-200/70">
             {entries.map((entry) => (
-              <tr key={entry.id} className="hover:bg-slate-50/80">
+              <tr
+                key={entry.id}
+                className={
+                  selectedEntry?.id === entry.id ? 'bg-cyan-50/60' : 'hover:bg-slate-50/80'
+                }
+              >
                 <td className="whitespace-nowrap px-4 py-3 font-mono text-gray-400">
                   {format(new Date(entry.timestamp), 'dd MMM HH:mm:ss')}
                 </td>
@@ -83,11 +101,67 @@ export default function AuditLog({ entries }: Props) {
                 <td className="px-4 py-3">
                   <Badge tone={outcomeTone(entry.outcome)}>{entry.outcome}</Badge>
                 </td>
+                <td className="px-4 py-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedEntryId(entry.id)}
+                  >
+                    View details
+                  </Button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {selectedEntry && (
+        <Card className="mt-4 p-4 ring-1 ring-cyan-100/80 sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-200/70 pb-3">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
+                Audit details
+              </p>
+              <h3 className="text-base font-semibold text-slate-900">{selectedEntry.action}</h3>
+            </div>
+            <Badge tone={outcomeTone(selectedEntry.outcome)}>{selectedEntry.outcome}</Badge>
+          </div>
+
+          <dl className="grid grid-cols-1 gap-4 text-sm text-slate-700 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-500">Entry ID</dt>
+              <dd className="mt-1 break-all font-mono text-xs text-slate-700">{selectedEntry.id}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-500">Workflow ID</dt>
+              <dd className="mt-1 break-all font-mono text-xs text-slate-700">
+                {selectedEntry.workflowId}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-500">Tool</dt>
+              <dd className="mt-1 font-medium text-slate-800">{selectedEntry.toolName}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-500">User</dt>
+              <dd className="mt-1 text-slate-800">{selectedEntry.userId}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-500">Timestamp</dt>
+              <dd className="mt-1 text-slate-800">
+                {format(new Date(selectedEntry.timestamp), 'dd MMM yyyy, HH:mm:ss')}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-slate-500">Relative time</dt>
+              <dd className="mt-1 text-slate-800">
+                {formatDistanceToNow(new Date(selectedEntry.timestamp), { addSuffix: true })}
+              </dd>
+            </div>
+          </dl>
+        </Card>
+      )}
     </>
   );
 }

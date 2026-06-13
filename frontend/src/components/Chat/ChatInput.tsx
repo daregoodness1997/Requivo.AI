@@ -10,6 +10,44 @@ interface Props {
   disabled?: boolean;
 }
 
+const useCaseGroups = [
+  {
+    label: 'Finance',
+    prompts: [
+      'List all due invoices',
+      'Show all overdue invoices',
+      'View invoice INV-2041 details',
+      'Pay invoice INV-2041 to Acme Corp for $4,500',
+    ],
+  },
+  {
+    label: 'Procurement',
+    prompts: [
+      'Create a purchase order for 50 office chairs',
+      'List open purchase orders awaiting approval',
+    ],
+  },
+  {
+    label: 'Inventory',
+    prompts: ['Check inventory for office chairs', 'Show low-stock SKUs in warehouse A'],
+  },
+  {
+    label: 'Sales',
+    prompts: ['Create a quote for customer ACME-442', 'Show pending sales orders this week'],
+  },
+  {
+    label: 'HR',
+    prompts: ['Start onboarding workflow for Jane Doe', 'List pending leave requests this month'],
+  },
+  {
+    label: 'Reporting',
+    prompts: [
+      'Show procurement spend by supplier for last quarter',
+      'Generate KPI summary for this month',
+    ],
+  },
+] as const;
+
 export default function ChatInput({ onSubmit, disabled }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,25 +86,35 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
         </Alert>
       )}
 
-      <div className="mb-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {[
-          'Show procurement spend by supplier',
-          'Check inventory for office chairs',
-          'Pay invoice INV-2041 for $4,500',
-        ].map((example) => (
-          <button
-            key={example}
-            type="button"
-            className="shrink-0 rounded-full border border-slate-200/90 bg-white/85 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50/70 hover:text-cyan-800"
-            disabled={disabled || isSubmitting}
-            onClick={() => {
-              setError(null);
-              setValue(example);
-            }}
-          >
-            {example}
-          </button>
-        ))}
+      <div className="mb-3 space-y-2">
+        <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Use case examples
+        </p>
+        <div className="space-y-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {useCaseGroups.map((group) => (
+            <div key={group.label} className="flex items-center gap-2">
+              <span className="min-w-[5rem] px-1 text-[11px] font-medium text-slate-500">
+                {group.label}
+              </span>
+              <div className="flex gap-2">
+                {group.prompts.map((example) => (
+                  <button
+                    key={example}
+                    type="button"
+                    className="shrink-0 rounded-full border border-slate-200/90 bg-white/85 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50/70 hover:text-cyan-800"
+                    disabled={disabled || isSubmitting}
+                    onClick={() => {
+                      setError(null);
+                      setValue(example);
+                    }}
+                  >
+                    {example}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
       <PromptInput
         value={value}
@@ -79,7 +127,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
       >
         <PromptInputTextarea
           aria-label="Business request"
-          placeholder="e.g. Show procurement spend by supplier for last quarter"
+          placeholder="e.g. List all due invoices and show actions"
           maxLength={2000}
           className="overflow-y-auto px-3 pt-2.5 text-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         />

@@ -59,7 +59,7 @@ export default function ChatPage() {
           Loading workflows
         </div>
       ) : (
-        <ChatWindow workflows={workflows} />
+        <ChatWindow workflows={workflows} onAction={startWorkflow} />
       )}
       <ChatInput onSubmit={startWorkflow} />
     </div>
