@@ -64,11 +64,9 @@ export interface ApprovalActionRequest {
 }
 
 export type UserRole =
-  | 'SystemAdmin'
-  | 'FinanceManager'
-  | 'ProcurementLead'
-  | 'HRManager'
-  | 'SalesRep'
+  | 'Admin'
+  | 'WorkflowOperator'
+  | 'Approver'
   | 'Auditor';
 
 export interface AuthUser {
@@ -81,19 +79,44 @@ export interface AuthUser {
 export interface LoginRequest {
   email: string;
   password: string;
+  totpCode?: string;
 }
 
-export interface LoginResult {
-  mfaRequired: boolean;
-  challengeId: string;
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  role?: UserRole;
 }
 
-export interface VerifyMfaRequest {
-  challengeId: string;
-  code: string;
+export interface RegisterResponse {
+  id: string;
+  email: string;
+  role: UserRole;
 }
 
-export interface AuthSession {
+export interface TokenResponse {
   accessToken: string;
-  user: AuthUser;
+  refreshToken: string;
+  mfaVerified: boolean;
+}
+
+export interface MeResponse {
+  id: string;
+  email: string;
+  role: UserRole;
+  mfaEnabled: boolean;
+  createdAt: string;
+}
+
+export interface MfaSetupResponse {
+  secret: string;
+  otpAuthUri: string;
+}
+
+export interface MfaVerifyRequest {
+  totpCode: string;
+}
+
+export interface MfaDisableRequest {
+  totpCode: string;
 }

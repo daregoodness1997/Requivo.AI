@@ -42,9 +42,9 @@ public class AuthController(
 
     // ── POST /api/auth/login ──────────────────────────────────────────────────
     /// <summary>
-    /// Login with email + password (+ optional TOTP code if MFA is enabled).
+    /// Login with email + password (+ optional TOTP code when MFA is enabled for the account).
     /// Returns a short-lived JWT access token and a refresh token.
-    /// The token will contain an <c>mfa=true</c> claim only when <c>totpCode</c> is supplied and valid.
+    /// The token will contain <c>mfa=true</c> and <c>amr=mfa</c> claims only when TOTP was validated.
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
@@ -75,8 +75,26 @@ public class AuthController(
         return Ok(new TokenResponse(accessToken, refreshToken, mfaVerified));
     }
 
+    // ── GET /api/auth/me ─────────────────────────────────────────────────────
+    /// <summary>Return the currently authenticated user profile, including MFA status.</summary>
+    [HttpGet("me")]
+    [Authorize]
+    [ProducesResponseType(typeof(MeResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Me(CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+        var user = await db.Users.FindAsync([userId], ct)
+                     ?? throw new KeyNotFoundException();
+
+        return Ok(new MeResponse(user.Id, user.Email, user.Role, user.MfaEnabled, user.CreatedAt));
+    }
+
     // ── POST /api/auth/mfa/setup ─────────────────────────────────────────────
-    /// <summary>Generate a TOTP secret for the authenticated user. Returns the Base32 secret and otpauth URI for QR code generation.</summary>
+    /// <summary>
+    /// Generate (or rotate) a TOTP secret for the authenticated user.
+    /// Returns the Base32 secret and otpauth URI for QR code generation.
+    /// MFA is not enabled until <c>/api/auth/mfa/verify</c> succeeds.
+    /// </summary>
     [HttpPost("mfa/setup")]
     [Authorize]
     [ProducesResponseType(typeof(MfaSetupResponse), StatusCodes.Status200OK)]
@@ -115,6 +133,31 @@ public class AuthController(
         var accessToken = tokens.GenerateAccessToken(user, mfaVerified: true);
         var refreshToken = tokens.GenerateRefreshToken();
         return Ok(new TokenResponse(accessToken, refreshToken, MfaVerified: true));
+    }
+
+    // ── POST /api/auth/mfa/disable ───────────────────────────────────────────
+    /// <summary>Disable MFA for the authenticated user after verifying a current TOTP code.</summary>
+    [HttpPost("mfa/disable")]
+    [Authorize]
+    [ProducesResponseType(typeof(MeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> MfaDisable([FromBody] MfaDisableRequest req, CancellationToken ct)
+    {
+        var userId = Guid.Parse(User.FindFirst("sub")!.Value);
+        var user = await db.Users.FindAsync([userId], ct)
+                     ?? throw new KeyNotFoundException();
+
+        if (!user.MfaEnabled || string.IsNullOrEmpty(user.TotpSecret))
+            return BadRequest(new { message = "MFA is not enabled for this account." });
+
+        if (!VerifyTotp(user.TotpSecret, req.TotpCode))
+            return BadRequest(new { message = "Invalid TOTP code." });
+
+        user.MfaEnabled = false;
+        user.TotpSecret = null;
+        await db.SaveChangesAsync(ct);
+
+        return Ok(new MeResponse(user.Id, user.Email, user.Role, user.MfaEnabled, user.CreatedAt));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -204,5 +247,7 @@ public record RegisterRequest(string Email, string Password, string? Role);
 public record RegisterResponse(Guid Id, string Email, string Role);
 public record LoginRequest(string Email, string Password, string? TotpCode);
 public record TokenResponse(string AccessToken, string RefreshToken, bool MfaVerified);
+public record MeResponse(Guid Id, string Email, string Role, bool MfaEnabled, DateTime CreatedAt);
 public record MfaSetupResponse(string Secret, string OtpAuthUri);
 public record MfaVerifyRequest(string TotpCode);
+public record MfaDisableRequest(string TotpCode);

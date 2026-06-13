@@ -1,30 +1,21 @@
 import { useState, type FormEvent } from 'react';
-import {
-  ArrowLeft,
-  KeyRound,
-  LoaderCircle,
-  LockKeyhole,
-  ShieldCheck,
-  Sparkles,
-} from 'lucide-react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { KeyRound, LoaderCircle, LockKeyhole, Sparkles } from 'lucide-react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Alert from '@/components/ui/Alert';
 import { Button } from '@/components/ui/button';
 import Card from '@/components/ui/Card';
 import { getErrorMessage } from '@/lib/errors';
 import { useAuthStore } from '@/store/authStore';
 
-const DEMO_EMAIL = 'demo@requivo.ai';
-const DEMO_PASSWORD = 'Demo123!';
-const DEMO_MFA_CODE = '123456';
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, challengeId, pendingEmail, login, verifyMfa, cancelMfa } = useAuthStore();
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
-  const [code, setCode] = useState('');
+  const { user, login } = useAuthStore();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [totpCode, setTotpCode] = useState('');
+  const [isMfaStep, setIsMfaStep] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const destination =
@@ -41,24 +32,23 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setIsSubmitting(true);
-    try {
-      await login(email, password);
-    } catch (loginError) {
-      setError(getErrorMessage(loginError, 'Sign in failed.'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
-  const handleMfa = async (event: FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
     try {
-      await verifyMfa(code);
+      if (!isMfaStep) {
+        await login(email, password);
+      } else {
+        await login(email, password, totpCode || undefined);
+      }
+
       navigate(destination, { replace: true });
-    } catch (mfaError) {
-      setError(getErrorMessage(mfaError, 'Verification failed.'));
+    } catch (loginError) {
+      if (axios.isAxiosError(loginError) && loginError.response?.data?.mfaRequired === true) {
+        setIsMfaStep(true);
+        setError(null);
+        return;
+      }
+
+      setError(getErrorMessage(loginError, 'Sign in failed.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -125,89 +115,25 @@ export default function LoginPage() {
           </div>
 
           <Card className="p-5 sm:p-7 ring-1 ring-white/70">
-            {challengeId ? (
-              <>
-                <button
-                  type="button"
-                  className="mb-5 inline-flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-900"
-                  onClick={() => {
-                    cancelMfa();
-                    setCode('');
-                    setError(null);
-                  }}
-                >
-                  <ArrowLeft className="size-3.5" />
-                  Back to sign in
-                </button>
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-                  <ShieldCheck className="size-6" />
-                </div>
-                <h2 className="mt-5 text-2xl font-bold tracking-tight text-gray-950">
-                  Verify your identity
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-gray-500">
-                  Enter the six-digit authentication code for {pendingEmail}.
-                </p>
-                {error && (
-                  <Alert className="mt-5" role="alert" tone="danger">
-                    {error}
-                  </Alert>
-                )}
-                <form className="mt-6" onSubmit={handleMfa}>
-                  <label
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                    htmlFor="mfa-code"
-                  >
-                    Authentication code
-                  </label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      id="mfa-code"
-                      autoComplete="one-time-code"
-                      className="h-12 w-full rounded-xl border border-gray-200 bg-white pl-10 pr-3 text-lg tracking-[0.35em] placeholder:tracking-normal placeholder:text-gray-400"
-                      inputMode="numeric"
-                      maxLength={6}
-                      placeholder="000000"
-                      value={code}
-                      onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    className="mt-4 h-11 w-full"
-                    disabled={code.length !== 6 || isSubmitting}
-                  >
-                    {isSubmitting && <LoaderCircle className="animate-spin" />}
-                    Verify and continue
-                  </Button>
-                </form>
-                <div className="mt-5 rounded-xl bg-gray-50 p-3 text-xs text-gray-500">
-                  Demo authentication code:{' '}
-                  <strong className="text-gray-800">{DEMO_MFA_CODE}</strong>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-                  <LockKeyhole className="size-6" />
-                </div>
-                <h2 className="mt-5 text-2xl font-bold tracking-tight text-gray-950">
-                  Welcome back
-                </h2>
-                <p className="mt-2 text-sm text-gray-500">
-                  Sign in to access your Requivo workspace.
-                </p>
-                {error && (
-                  <Alert className="mt-5" role="alert" tone="danger">
-                    {error}
-                  </Alert>
-                )}
-                <form className="mt-6 space-y-4" onSubmit={handleLogin}>
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+              <LockKeyhole className="size-6" />
+            </div>
+            <h2 className="mt-5 text-2xl font-bold tracking-tight text-gray-950">Welcome back</h2>
+            <p className="mt-2 text-sm text-gray-500">
+              {isMfaStep
+                ? `Enter the 6-digit code for ${email}.`
+                : 'Sign in with your account. If MFA is enabled, you will verify in the next step.'}
+            </p>
+            {error && (
+              <Alert className="mt-5" role="alert" tone="danger">
+                {error}
+              </Alert>
+            )}
+            <form className="mt-6 space-y-4" onSubmit={handleLogin}>
+              {!isMfaStep ? (
+                <>
                   <label className="block">
-                    <span className="mb-2 block text-sm font-medium text-gray-700">
-                      Email address
-                    </span>
+                    <span className="mb-2 block text-sm font-medium text-gray-700">Email address</span>
                     <input
                       type="email"
                       autoComplete="email"
@@ -226,22 +152,60 @@ export default function LoginPage() {
                       onChange={(event) => setPassword(event.target.value)}
                     />
                   </label>
+                </>
+              ) : (
+                <>
+                  <label className="block">
+                    <span className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <KeyRound className="size-4 text-gray-500" />
+                      MFA code
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm tracking-[0.2em]"
+                      placeholder="123456"
+                      value={totpCode}
+                      onChange={(event) => setTotpCode(event.target.value.replace(/\D/g, ''))}
+                    />
+                  </label>
                   <Button
-                    type="submit"
+                    type="button"
+                    variant="outline"
                     className="h-11 w-full"
-                    disabled={!email.trim() || !password || isSubmitting}
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      setIsMfaStep(false);
+                      setTotpCode('');
+                      setError(null);
+                    }}
                   >
-                    {isSubmitting && <LoaderCircle className="animate-spin" />}
-                    Continue
+                    Back to credentials
                   </Button>
-                </form>
-                <div className="mt-5 rounded-xl border border-brand-100 bg-brand-50 p-3 text-xs text-brand-900">
-                  <p className="font-semibold">Demo credentials</p>
-                  <p className="mt-1">{DEMO_EMAIL}</p>
-                  <p>{DEMO_PASSWORD}</p>
-                </div>
-              </>
-            )}
+                </>
+              )}
+              <Button
+                type="submit"
+                className="h-11 w-full"
+                disabled={
+                  !email.trim() ||
+                  !password ||
+                  isSubmitting ||
+                  (isMfaStep && totpCode.trim().length < 6)
+                }
+              >
+                {isSubmitting && <LoaderCircle className="animate-spin" />}
+                {isMfaStep ? 'Verify and continue' : 'Continue'}
+              </Button>
+            </form>
+            <p className="mt-4 text-center text-sm text-gray-500">
+              Need an account?{' '}
+              <Link to="/register" className="font-semibold text-cyan-700 hover:text-cyan-800">
+                Create account
+              </Link>
+            </p>
           </Card>
           <p className="mt-5 text-center text-xs text-gray-400">
             Protected with multi-factor authentication

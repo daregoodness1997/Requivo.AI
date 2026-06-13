@@ -20,6 +20,10 @@ const routeTitles: Record<string, { title: string; description: string }> = {
     title: 'Audit Log',
     description: 'Trace every automated operation',
   },
+  '/profile': {
+    title: 'Profile & Security',
+    description: 'Manage account identity and MFA settings',
+  },
 };
 
 interface HeaderProps {
@@ -113,7 +117,7 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <Badge className="hidden sm:inline-flex" tone="info">
-            Demo mode
+            Authenticated
           </Badge>
 
           <div className="relative" ref={notificationRef}>
@@ -215,7 +219,7 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
                 {initials}
               </div>
               <div className="hidden pr-1 text-left sm:block">
-                <p className="text-xs font-semibold text-gray-900">{user?.name ?? 'Demo User'}</p>
+                <p className="text-xs font-semibold text-gray-900">{user?.name ?? 'User'}</p>
                 <p className="text-[10px] uppercase tracking-wide text-gray-500">{roleLabel}</p>
               </div>
               <ChevronDown className="hidden size-3.5 text-gray-400 sm:block" />

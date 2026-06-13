@@ -6,15 +6,46 @@ import AuditPage from '@/pages/AuditPage';
 import ChatPage from '@/pages/ChatPage';
 import DashboardPage from '@/pages/DashboardPage';
 import LoginPage from '@/pages/LoginPage';
+import ProfilePage from '@/pages/ProfilePage';
+import RegisterPage from '@/pages/RegisterPage';
 
 function WorkspaceRoutes() {
   return (
     <Layout>
       <Routes>
         <Route path="/" element={<Navigate to="/chat" replace />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/audit" element={<AuditPage />} />
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute allowedRoles={['WorkflowOperator', 'Admin', 'Auditor']}>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['Approver', 'Admin']}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/audit"
+          element={
+            <ProtectedRoute allowedRoles={['Auditor', 'Admin']}>
+              <AuditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="*"
           element={
@@ -35,6 +66,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route
         path="/*"
         element={

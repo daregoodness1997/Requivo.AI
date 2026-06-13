@@ -1,61 +1,47 @@
 import client from './client';
-import { env } from '@/config/env';
-import type { AuthSession, LoginRequest, LoginResult, VerifyMfaRequest } from '@/types';
+import type {
+  LoginRequest,
+  MfaDisableRequest,
+  MfaSetupResponse,
+  MfaVerifyRequest,
+  MeResponse,
+  RegisterRequest,
+  RegisterResponse,
+  TokenResponse,
+} from '@/types';
 
-const DEMO_EMAIL = 'demo@requivo.ai';
-const DEMO_PASSWORD = 'Demo123!';
-const DEMO_MFA_CODE = '123456';
-const delay = (ms = 500) => new Promise((resolve) => window.setTimeout(resolve, ms));
-
-const demoAuthApi = {
-  async login(request: LoginRequest): Promise<LoginResult> {
-    await delay();
-    if (request.email.trim().toLowerCase() !== DEMO_EMAIL || request.password !== DEMO_PASSWORD) {
-      throw new Error('Use the demo email and password shown on this page.');
-    }
-
-    return {
-      mfaRequired: true,
-      challengeId: crypto.randomUUID(),
-    };
-  },
-
-  async verifyMfa(request: VerifyMfaRequest): Promise<AuthSession> {
-    await delay();
-    if (!request.challengeId || request.code !== DEMO_MFA_CODE) {
-      throw new Error('The verification code is incorrect. Use 123456 in demo mode.');
-    }
-
-    return {
-      accessToken: 'requivo-demo-token',
-      user: {
-        id: 'user-demo-admin',
-        email: DEMO_EMAIL,
-        name: 'Demo User',
-        role: 'SystemAdmin',
-      },
-    };
-  },
-
-  async logout() {
-    await delay(150);
-  },
-};
-
-const realAuthApi = {
-  async login(request: LoginRequest): Promise<LoginResult> {
-    const response = await client.post<LoginResult>('/api/auth/login', request);
+export const authApi = {
+  async register(request: RegisterRequest): Promise<RegisterResponse> {
+    const response = await client.post<RegisterResponse>('/api/auth/register', request);
     return response.data;
   },
 
-  async verifyMfa(request: VerifyMfaRequest): Promise<AuthSession> {
-    const response = await client.post<AuthSession>('/api/auth/mfa/verify', request);
+  async login(request: LoginRequest): Promise<TokenResponse> {
+    const response = await client.post<TokenResponse>('/api/auth/login', request);
+    return response.data;
+  },
+
+  async me(): Promise<MeResponse> {
+    const response = await client.get<MeResponse>('/api/auth/me');
+    return response.data;
+  },
+
+  async setupMfa(): Promise<MfaSetupResponse> {
+    const response = await client.post<MfaSetupResponse>('/api/auth/mfa/setup');
+    return response.data;
+  },
+
+  async verifyMfa(request: MfaVerifyRequest): Promise<TokenResponse> {
+    const response = await client.post<TokenResponse>('/api/auth/mfa/verify', request);
+    return response.data;
+  },
+
+  async disableMfa(request: MfaDisableRequest): Promise<MeResponse> {
+    const response = await client.post<MeResponse>('/api/auth/mfa/disable', request);
     return response.data;
   },
 
   async logout() {
-    await client.post('/api/auth/logout');
+    return Promise.resolve();
   },
 };
-
-export const authApi = env.useMockApi ? demoAuthApi : realAuthApi;

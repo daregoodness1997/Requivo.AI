@@ -1,5 +1,5 @@
 import { formatDistanceToNow } from 'date-fns';
-import { ClipboardCheck, FileClock, MessageSquareText, Plus, Sparkles, X } from 'lucide-react';
+import { ClipboardCheck, FileClock, MessageSquareText, Plus, Settings, Sparkles, X } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ const links = [
   { to: '/chat', label: 'Chat', icon: MessageSquareText },
   { to: '/dashboard', label: 'Approvals', icon: ClipboardCheck },
   { to: '/audit', label: 'Audit Log', icon: FileClock },
+  { to: '/profile', label: 'Profile', icon: Settings },
 ];
 
 interface SidebarProps {
@@ -163,10 +164,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <div className="rounded-xl bg-white/[0.08] px-3 py-3 ring-1 ring-white/10">
             <div className="flex items-center gap-2 text-xs font-medium text-cyan-100">
               <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.15)]" />
-              Frontend demo mode
+              Backend connected
             </div>
             <p className="mt-1 text-[11px] leading-4 text-cyan-200/80">
-              Local data is active until backend integration.
+              Authentication and authorization enforced by API policies.
             </p>
           </div>
           <p className="mt-4 px-1 font-mono text-[11px] tracking-wide text-cyan-300/75">

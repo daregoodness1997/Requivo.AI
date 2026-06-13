@@ -9,10 +9,10 @@ function booleanOrDefault(value: string | undefined, fallback: boolean) {
 }
 
 export const env = {
-  useMockApi: booleanOrDefault(import.meta.env.VITE_USE_MOCK_API, true),
-  apiBaseUrl: valueOrDefault(import.meta.env.VITE_API_BASE_URL, 'https://localhost:7001'),
+  useMockApi: booleanOrDefault(import.meta.env.VITE_USE_MOCK_API, false),
+  apiBaseUrl: valueOrDefault(import.meta.env.VITE_API_BASE_URL, 'http://localhost:5000'),
   sseBaseUrl: valueOrDefault(
     import.meta.env.VITE_SSE_URL,
-    'https://localhost:7001/api/workflow/events',
+    'http://localhost:5000/api/workflow/events',
   ),
 } as const;

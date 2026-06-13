@@ -68,7 +68,6 @@ builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
-        .AddRequirements(new MfaRequirement())
         .Build();
 
     options.AddPolicy(AuthorizationPolicies.WorkflowStart, policy =>
@@ -116,9 +115,12 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<Requivo.Api.Swagger.AuthorizeOperationFilter>();
 });
 
-// ── CORS (allow dev frontend) ──────────────────────────────────
-builder.Services.AddCors(opt => opt.AddPolicy("DevFrontend", p =>
-    p.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+// ── CORS ───────────────────────────────────────────────────────
+var allowedCorsOrigins = cfg.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? new[] { "http://localhost:5173" };
+
+builder.Services.AddCors(opt => opt.AddPolicy("Frontend", p =>
+    p.WithOrigins(allowedCorsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 var app = builder.Build();
 
@@ -126,19 +128,35 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.UseCors("DevFrontend");
 }
 
-app.UseHttpsRedirection();
+app.UseCors("Frontend");
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// ── Auto-migrate on startup (dev only) ────────────────────────
-if (app.Environment.IsDevelopment())
+// ── Auto-migrate and seed test users on startup ───────────────
+var seedTestUsers = cfg.GetValue("Auth:SeedTestUsers", true);
+if (seedTestUsers || app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
-    scope.ServiceProvider.GetRequiredService<RequivoDbContext>().Database.Migrate();
+    var db = scope.ServiceProvider.GetRequiredService<RequivoDbContext>();
+
+    if (app.Environment.IsDevelopment())
+    {
+        db.Database.Migrate();
+    }
+
+    if (seedTestUsers)
+    {
+        await DevUserSeeder.SeedAsync(db);
+    }
 }
 
 app.Run();
