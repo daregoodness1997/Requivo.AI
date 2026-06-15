@@ -11,7 +11,7 @@ public class ProcurementTool(
     ILogger<ProcurementTool> logger,
     IProcurementGateway procurementGateway) : ITool
 {
-    public string Name        => "ProcurementTool";
+    public string Name => "ProcurementTool";
     public string Description => "Supplier selection, purchase order creation and submission";
 
     public async Task<ToolResult> ExecuteAsync(object? input, WorkflowContext context, CancellationToken ct = default)
