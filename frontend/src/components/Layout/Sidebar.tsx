@@ -1,13 +1,9 @@
 import { ClipboardCheck, FileClock, MessageSquareText, Sparkles, X } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { approvalRoles, auditRoles, hasRole } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
-
-const links = [
-  { to: '/chat', label: 'Chat', icon: MessageSquareText },
-  { to: '/dashboard', label: 'Approvals', icon: ClipboardCheck },
-  { to: '/audit', label: 'Audit Log', icon: FileClock },
-];
+import { useAuthStore } from '@/store/authStore';
 
 interface SidebarProps {
   open: boolean;
@@ -15,6 +11,18 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
+  const role = useAuthStore((state) => state.user?.role);
+  const links = [
+    { to: '/chat', label: 'Chat', icon: MessageSquareText, visible: true },
+    {
+      to: '/dashboard',
+      label: 'Approvals',
+      icon: ClipboardCheck,
+      visible: hasRole(role, approvalRoles),
+    },
+    { to: '/audit', label: 'Audit Log', icon: FileClock, visible: hasRole(role, auditRoles) },
+  ];
+
   return (
     <>
       <button
@@ -57,24 +65,26 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-300">
             Workspace
           </p>
-          {links.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={onClose}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:ring-white/70',
-                  isActive
-                    ? 'bg-white text-brand-900 shadow-sm'
-                    : 'text-blue-100 hover:bg-white/10 hover:text-white',
-                )
-              }
-            >
-              <Icon className="size-[18px]" />
-              {label}
-            </NavLink>
-          ))}
+          {links
+            .filter((link) => link.visible)
+            .map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:ring-white/70',
+                    isActive
+                      ? 'bg-white text-brand-900 shadow-sm'
+                      : 'text-blue-100 hover:bg-white/10 hover:text-white',
+                  )
+                }
+              >
+                <Icon className="size-[18px]" />
+                {label}
+              </NavLink>
+            ))}
         </nav>
         <div className="border-t border-white/10 p-4">
           <div className="rounded-xl bg-white/[0.08] px-3 py-3">
@@ -86,7 +96,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               Local data is active until backend integration.
             </p>
           </div>
-          <p className="mt-4 px-1 text-[11px] text-blue-400">v0.2.0 · Lumenware Technologies</p>
+          <p className="mt-4 px-1 text-[11px] text-blue-400">
+            v0.3.0 &middot; Lumenware Technologies
+          </p>
         </div>
       </aside>
     </>

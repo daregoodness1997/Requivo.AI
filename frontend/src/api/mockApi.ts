@@ -91,6 +91,7 @@ const approvals: ApprovalRequest[] = [
   {
     id: 'approval-demo-po',
     workflowId: 'wf-demo-procurement',
+    priority: 'High',
     triggerReason: 'Purchase order execution',
     proposedAction: 'Issue PO-2026-0042 to ABC Supplies for $3,500',
     businessContext:
@@ -104,6 +105,7 @@ const approvals: ApprovalRequest[] = [
   {
     id: 'approval-demo-finance',
     workflowId: 'wf-demo-finance',
+    priority: 'High',
     triggerReason: 'Financial threshold',
     proposedAction: 'Pay invoice INV-2041 to Acme Corp for $4,500',
     businessContext:
@@ -124,6 +126,8 @@ const auditEntries: AuditEntry[] = [
     toolName: 'ReportingTool',
     action: 'Aggregate procurement spend by supplier',
     outcome: 'Success',
+    input: { period: 'last_quarter', groupBy: 'supplier' },
+    output: { supplierCount: 12, totalSpend: 184250 },
     timestamp: isoAgo(41),
   },
   {
@@ -133,6 +137,8 @@ const auditEntries: AuditEntry[] = [
     toolName: 'InventoryTool',
     action: 'Check current office chair stock',
     outcome: 'Success',
+    input: { item: 'office_chair', location: 'main_warehouse' },
+    output: { onHand: 14, reorderPoint: 25 },
     timestamp: isoAgo(18),
   },
   {
@@ -142,6 +148,8 @@ const auditEntries: AuditEntry[] = [
     toolName: 'ProcurementTool',
     action: 'Create purchase order for approval',
     outcome: 'Pending Approval',
+    input: { quantity: 50, item: 'office_chair' },
+    output: { purchaseOrder: 'PO-2026-0042', amount: 3500, currency: 'USD' },
     timestamp: isoAgo(15),
   },
 ];
@@ -208,6 +216,11 @@ function addAudit(workflow: Workflow, step: WorkflowStep, outcome: string) {
     toolName: step.toolName,
     action: step.description,
     outcome,
+    input: { workflowRequest: workflow.userInput },
+    output:
+      step.output && typeof step.output === 'object'
+        ? (step.output as Record<string, unknown>)
+        : { result: step.output },
     timestamp: new Date().toISOString(),
   });
 }
@@ -243,6 +256,7 @@ async function runWorkflow(id: string) {
       approvals.unshift({
         id: crypto.randomUUID(),
         workflowId: workflow.id,
+        priority: workflow.domain === 'Finance' ? 'High' : 'Medium',
         triggerReason:
           workflow.domain === 'Finance'
             ? 'Financial threshold'
@@ -339,6 +353,13 @@ export const mockApprovalApi = {
     return clone(approvals.filter((approval) => approval.decision === 'Pending'));
   },
 
+  async getById(id: string) {
+    await latency(120);
+    const approval = approvals.find((item) => item.id === id);
+    if (!approval) throw new Error('Approval request not found.');
+    return clone(approval);
+  },
+
   async decide(id: string, body: ApprovalActionRequest) {
     await latency(500);
     const approval = approvals.find((item) => item.id === id);
@@ -377,5 +398,12 @@ export const mockAuditApi = {
       ? auditEntries.filter((entry) => entry.workflowId === workflowId)
       : auditEntries;
     return clone(entries);
+  },
+
+  async getById(id: string) {
+    await latency(120);
+    const entry = auditEntries.find((item) => item.id === id);
+    if (!entry) throw new Error('Audit entry not found.');
+    return clone(entry);
   },
 };

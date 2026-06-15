@@ -6,6 +6,7 @@ import EmptyState from '@/components/ui/EmptyState';
 
 interface Props {
   entries: AuditEntry[];
+  onSelect: (entry: AuditEntry) => void;
 }
 
 function outcomeTone(outcome: string) {
@@ -14,13 +15,13 @@ function outcomeTone(outcome: string) {
   return 'danger';
 }
 
-export default function AuditLog({ entries }: Props) {
+export default function AuditLog({ entries, onSelect }: Props) {
   if (!entries.length) {
     return (
       <Card className="min-h-64">
         <EmptyState
           title="No matching audit entries"
-          description="Try changing your search text or outcome filter."
+          description="Try changing your search text or filters."
         />
       </Card>
     );
@@ -30,31 +31,40 @@ export default function AuditLog({ entries }: Props) {
     <>
       <div className="space-y-3 md:hidden">
         {entries.map((entry) => (
-          <Card key={entry.id} className="p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900">{entry.action}</p>
-                <p className="mt-1 text-xs text-gray-500">{entry.toolName}</p>
+          <button
+            key={entry.id}
+            type="button"
+            className="block w-full text-left"
+            onClick={() => onSelect(entry)}
+          >
+            <Card className="p-4 transition-colors hover:border-brand-200 hover:bg-brand-50/30">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900">{entry.action}</p>
+                  <p className="mt-1 text-xs text-gray-500">{entry.toolName}</p>
+                </div>
+                <Badge tone={outcomeTone(entry.outcome)}>{entry.outcome}</Badge>
               </div>
-              <Badge tone={outcomeTone(entry.outcome)}>{entry.outcome}</Badge>
-            </div>
-            <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-xs">
-              <div>
-                <dt className="text-gray-400">Workflow</dt>
-                <dd className="mt-1 font-mono text-gray-600">{entry.workflowId.slice(0, 12)}…</dd>
-              </div>
-              <div>
-                <dt className="text-gray-400">Time</dt>
-                <dd className="mt-1 text-gray-600">
-                  {formatDistanceToNow(new Date(entry.timestamp), { addSuffix: true })}
-                </dd>
-              </div>
-              <div className="col-span-2">
-                <dt className="text-gray-400">User</dt>
-                <dd className="mt-1 text-gray-600">{entry.userId}</dd>
-              </div>
-            </dl>
-          </Card>
+              <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-xs">
+                <div>
+                  <dt className="text-gray-400">Workflow</dt>
+                  <dd className="mt-1 font-mono text-gray-600">
+                    {entry.workflowId.slice(0, 12)}...
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-400">Time</dt>
+                  <dd className="mt-1 text-gray-600">
+                    {formatDistanceToNow(new Date(entry.timestamp), { addSuffix: true })}
+                  </dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-gray-400">User</dt>
+                  <dd className="mt-1 text-gray-600">{entry.userId}</dd>
+                </div>
+              </dl>
+            </Card>
+          </button>
         ))}
       </div>
       <div className="hidden overflow-x-auto rounded-xl border border-gray-200 md:block">
@@ -70,12 +80,20 @@ export default function AuditLog({ entries }: Props) {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {entries.map((entry) => (
-              <tr key={entry.id} className="hover:bg-gray-50">
+              <tr
+                key={entry.id}
+                tabIndex={0}
+                className="cursor-pointer hover:bg-gray-50 focus-visible:bg-brand-50"
+                onClick={() => onSelect(entry)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') onSelect(entry);
+                }}
+              >
                 <td className="whitespace-nowrap px-4 py-3 text-gray-400">
                   {format(new Date(entry.timestamp), 'dd MMM HH:mm:ss')}
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                  {entry.workflowId.slice(0, 8)}…
+                  {entry.workflowId.slice(0, 8)}...
                 </td>
                 <td className="px-4 py-3 font-medium text-gray-700">{entry.toolName}</td>
                 <td className="px-4 py-3 text-gray-600">{entry.action}</td>

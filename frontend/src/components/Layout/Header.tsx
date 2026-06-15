@@ -5,6 +5,7 @@ import Badge from '@/components/ui/Badge';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 import { useWorkflowStore } from '@/store/workflowStore';
+import { approvalRoles, hasRole } from '@/lib/permissions';
 
 const routeTitles: Record<string, { title: string; description: string }> = {
   '/chat': {
@@ -35,7 +36,15 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const route = routeTitles[pathname] ?? routeTitles['/chat'];
+  const route =
+    routeTitles[pathname] ??
+    (pathname.startsWith('/workflows/')
+      ? { title: 'Workflow Details', description: 'Inspect execution steps and outputs' }
+      : pathname.startsWith('/approvals/')
+        ? { title: 'Approval Details', description: 'Review context and record a decision' }
+        : pathname === '/unauthorized'
+          ? { title: 'Access Restricted', description: 'This area requires another role' }
+          : routeTitles['/chat']);
   const initials =
     user?.name
       .split(' ')
@@ -44,6 +53,7 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
       .slice(0, 2)
       .toUpperCase() ?? 'DU';
   const roleLabel = user?.role.replace(/([a-z])([A-Z])/g, '$1 $2') ?? 'System Admin';
+  const canReviewApprovals = hasRole(user?.role, approvalRoles);
 
   useEffect(() => {
     setIsNotificationOpen(false);
@@ -77,6 +87,11 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
     navigate('/dashboard');
   };
 
+  const openApproval = (approvalId: string) => {
+    setIsNotificationOpen(false);
+    navigate(`/approvals/${approvalId}`);
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
       <div className="flex min-w-0 items-center gap-3">
@@ -100,87 +115,89 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
         <Badge className="hidden sm:inline-flex" tone="info">
           Demo mode
         </Badge>
-        <div className="relative" ref={notificationRef}>
-          <Button
-            aria-label={
-              pendingCount
-                ? `${pendingCount} pending approval${pendingCount === 1 ? '' : 's'}`
-                : 'Notifications'
-            }
-            aria-expanded={isNotificationOpen}
-            aria-haspopup="dialog"
-            className="relative"
-            size="icon"
-            variant="ghost"
-            onClick={() => {
-              setIsUserMenuOpen(false);
-              setIsNotificationOpen((open) => !open);
-            }}
-          >
-            <Bell />
-            {pendingCount > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-warning-700 text-[10px] font-bold text-white">
-                {pendingCount}
-              </span>
-            )}
-          </Button>
-          {isNotificationOpen && (
-            <div
-              role="dialog"
-              aria-label="Notifications"
-              className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
+        {canReviewApprovals && (
+          <div className="relative" ref={notificationRef}>
+            <Button
+              aria-label={
+                pendingCount
+                  ? `${pendingCount} pending approval${pendingCount === 1 ? '' : 's'}`
+                  : 'Notifications'
+              }
+              aria-expanded={isNotificationOpen}
+              aria-haspopup="dialog"
+              className="relative"
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                setIsUserMenuOpen(false);
+                setIsNotificationOpen((open) => !open);
+              }}
             >
-              <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-950">Notifications</p>
-                  <p className="text-xs text-gray-500">
-                    {pendingCount
-                      ? `${pendingCount} approval${pendingCount === 1 ? '' : 's'} need your attention`
-                      : 'You are all caught up'}
-                  </p>
-                </div>
-                {pendingCount > 0 && <Badge tone="warning">{pendingCount} pending</Badge>}
-              </div>
-
-              {pendingCount > 0 ? (
-                <div className="max-h-80 divide-y divide-gray-100 overflow-y-auto">
-                  {pendingApprovals.slice(0, 3).map((approval) => (
-                    <button
-                      key={approval.id}
-                      type="button"
-                      className="block w-full px-4 py-3 text-left transition-colors hover:bg-gray-50 focus-visible:bg-gray-50"
-                      onClick={openApprovals}
-                    >
-                      <span className="block text-xs font-medium text-warning-700">
-                        {approval.triggerReason}
-                      </span>
-                      <span className="mt-1 block text-sm font-semibold text-gray-900">
-                        {approval.proposedAction}
-                      </span>
-                      <span className="mt-1 line-clamp-2 block text-xs leading-5 text-gray-500">
-                        {approval.businessContext}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-8 text-center">
-                  <Bell className="mx-auto size-7 text-gray-300" />
-                  <p className="mt-2 text-sm font-medium text-gray-700">No new notifications</p>
-                </div>
+              <Bell />
+              {pendingCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-warning-700 text-[10px] font-bold text-white">
+                  {pendingCount}
+                </span>
               )}
-
-              <button
-                type="button"
-                className="flex w-full items-center justify-between border-t border-gray-100 px-4 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-50"
-                onClick={openApprovals}
+            </Button>
+            {isNotificationOpen && (
+              <div
+                role="dialog"
+                aria-label="Notifications"
+                className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl"
               >
-                View all approvals
-                <ArrowRight className="size-4" />
-              </button>
-            </div>
-          )}
-        </div>
+                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-950">Notifications</p>
+                    <p className="text-xs text-gray-500">
+                      {pendingCount
+                        ? `${pendingCount} approval${pendingCount === 1 ? '' : 's'} need your attention`
+                        : 'You are all caught up'}
+                    </p>
+                  </div>
+                  {pendingCount > 0 && <Badge tone="warning">{pendingCount} pending</Badge>}
+                </div>
+
+                {pendingCount > 0 ? (
+                  <div className="max-h-80 divide-y divide-gray-100 overflow-y-auto">
+                    {pendingApprovals.slice(0, 3).map((approval) => (
+                      <button
+                        key={approval.id}
+                        type="button"
+                        className="block w-full px-4 py-3 text-left transition-colors hover:bg-gray-50 focus-visible:bg-gray-50"
+                        onClick={() => openApproval(approval.id)}
+                      >
+                        <span className="block text-xs font-medium text-warning-700">
+                          {approval.triggerReason}
+                        </span>
+                        <span className="mt-1 block text-sm font-semibold text-gray-900">
+                          {approval.proposedAction}
+                        </span>
+                        <span className="mt-1 line-clamp-2 block text-xs leading-5 text-gray-500">
+                          {approval.businessContext}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-8 text-center">
+                    <Bell className="mx-auto size-7 text-gray-300" />
+                    <p className="mt-2 text-sm font-medium text-gray-700">No new notifications</p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between border-t border-gray-100 px-4 py-3 text-sm font-semibold text-brand-700 hover:bg-brand-50"
+                  onClick={openApprovals}
+                >
+                  View all approvals
+                  <ArrowRight className="size-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         <div className="relative" ref={userMenuRef}>
           <button
             type="button"

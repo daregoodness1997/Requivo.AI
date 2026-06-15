@@ -32,6 +32,11 @@ export const approvalApi = {
       ? mockApprovalApi.list()
       : client.get<ApprovalRequest[]>('/api/approval').then((response) => response.data),
 
+  getById: (id: string) =>
+    env.useMockApi
+      ? mockApprovalApi.getById(id)
+      : client.get<ApprovalRequest>(`/api/approval/${id}`).then((response) => response.data),
+
   decide: (id: string, body: ApprovalActionRequest) =>
     env.useMockApi
       ? mockApprovalApi.decide(id, body)
@@ -47,4 +52,9 @@ export const auditApi = {
       : client
           .get<AuditEntry[]>('/api/audit', { params: { workflowId } })
           .then((response) => response.data),
+
+  getById: (id: string) =>
+    env.useMockApi
+      ? mockAuditApi.getById(id)
+      : client.get<AuditEntry>(`/api/audit/${id}`).then((response) => response.data),
 };

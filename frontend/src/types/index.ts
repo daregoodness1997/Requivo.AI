@@ -9,6 +9,7 @@ export type WorkflowState =
 export type WorkflowDomain = 'Inventory' | 'Procurement' | 'Finance' | 'Sales' | 'HR' | 'Reporting';
 
 export type ApprovalDecision = 'Pending' | 'Approved' | 'Rejected';
+export type ApprovalPriority = 'Low' | 'Medium' | 'High';
 
 export interface Workflow {
   id: string;
@@ -34,6 +35,7 @@ export interface WorkflowStep {
 export interface ApprovalRequest {
   id: string;
   workflowId: string;
+  priority: ApprovalPriority;
   triggerReason: string;
   proposedAction: string;
   businessContext: string;
@@ -51,6 +53,8 @@ export interface AuditEntry {
   toolName: string;
   action: string;
   outcome: string;
+  input?: Record<string, unknown> | null;
+  output?: Record<string, unknown> | null;
   timestamp: string;
 }
 

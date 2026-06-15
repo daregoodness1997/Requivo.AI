@@ -7,22 +7,28 @@ const client = axios.create({
   withCredentials: true,
 });
 
-// Attach JWT from localStorage on every request
+let handlingUnauthorized = false;
+
 client.interceptors.request.use((config) => {
   const token = localStorage.getItem('requivo_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Global 401 handling — redirect to login
 client.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
+  (response) => response,
+  (error) => {
+    if (
+      error.response?.status === 401 &&
+      !handlingUnauthorized &&
+      window.location.pathname !== '/login'
+    ) {
+      handlingUnauthorized = true;
       localStorage.removeItem('requivo_token');
-      window.location.href = '/login';
+      localStorage.removeItem('requivo-auth');
+      window.location.replace('/login');
     }
-    return Promise.reject(err);
+    return Promise.reject(error);
   },
 );
 

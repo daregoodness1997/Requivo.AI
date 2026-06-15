@@ -11,6 +11,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Alert from '@/components/ui/Alert';
 import { Button } from '@/components/ui/button';
 import Card from '@/components/ui/Card';
+import { Input } from '@/components/ui/input';
 import { getErrorMessage } from '@/lib/errors';
 import { useAuthStore } from '@/store/authStore';
 
@@ -202,20 +203,20 @@ export default function LoginPage() {
                     <span className="mb-2 block text-sm font-medium text-gray-700">
                       Email address
                     </span>
-                    <input
+                    <Input
                       type="email"
                       autoComplete="email"
-                      className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                      className="rounded-xl"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                     />
                   </label>
                   <label className="block">
                     <span className="mb-2 block text-sm font-medium text-gray-700">Password</span>
-                    <input
+                    <Input
                       type="password"
                       autoComplete="current-password"
-                      className="h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm"
+                      className="rounded-xl"
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}
                     />

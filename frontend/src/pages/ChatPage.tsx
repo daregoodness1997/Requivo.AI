@@ -15,7 +15,7 @@ export default function ChatPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useSSE(activeWorkflowId);
+  const connectionState = useSSE(activeWorkflowId);
 
   useEffect(() => {
     let active = true;
@@ -40,8 +40,37 @@ export default function ChatPage() {
   return (
     <div className="flex h-[calc(100vh-6rem)] min-h-[34rem] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="border-b border-gray-100 px-6 py-4">
-        <h1 className="text-base font-semibold text-gray-900">ERP Assistant</h1>
-        <p className="text-xs text-gray-500">Describe a business task in plain English</p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-base font-semibold text-gray-900">ERP Assistant</h1>
+            <p className="text-xs text-gray-500">Describe a business task in plain English</p>
+          </div>
+          {activeWorkflowId && (
+            <span
+              role="status"
+              className={`mt-1 inline-flex items-center gap-1.5 text-[11px] font-medium ${
+                connectionState === 'disconnected' ? 'text-danger-700' : 'text-gray-500'
+              }`}
+            >
+              <span
+                className={`size-2 rounded-full ${
+                  connectionState === 'connected'
+                    ? 'bg-success-500'
+                    : connectionState === 'disconnected'
+                      ? 'bg-danger-500'
+                      : 'animate-pulse bg-warning-500'
+                }`}
+              />
+              {connectionState === 'connected'
+                ? 'Updates synced'
+                : connectionState === 'disconnected'
+                  ? 'Updates paused'
+                  : connectionState === 'reconnecting'
+                    ? 'Reconnecting'
+                    : 'Connecting'}
+            </span>
+          )}
+        </div>
       </div>
       {loadError && (
         <Alert className="m-4 mb-0" role="alert" tone="danger">

@@ -6,18 +6,18 @@ This roadmap breaks the frontend work into small, manageable steps. Complete and
 
 **Last updated:** June 10, 2026
 
-**Current position:** Phase 5, Step 5.2
+**Current position:** Frontend feature-complete in demo mode; backend integration handoff next
 
 - [x] Phase 1: Frontend setup and tooling
 - [x] Phase 2: UI foundation
 - [~] Phase 3: Authentication
 - [~] Phase 4: API and application state
-- [~] Phase 5: Chat and workflow creation
+- [x] Phase 5: Chat and workflow creation
 - [~] Phase 6: Real-time workflow updates
-- [~] Phase 7: Approval experience
+- [x] Phase 7: Approval experience
 - [~] Phase 8: Audit log
 - [~] Phase 9: Accessibility and responsive design
-- [ ] Phase 10: Frontend testing
+- [~] Phase 10: Frontend testing
 - [~] Phase 11: Production readiness
 
 Legend:
@@ -43,6 +43,16 @@ Legend:
 - Demo login, MFA verification, persisted session, protected routes, user menu, and logout added.
 - Workflow progress simulation and polling added for frontend development without the backend.
 - Approval cards, decision feedback, rejection rationale validation, and audit filtering added.
+- Notification bell completed with pending-approval previews, accessible dismissal, and approvals
+  navigation.
+- Chat redesigned as user and agent messages with reusable workflow cards.
+- Workflow and approval detail routes added.
+- Approval priority, trigger, and text filters added with explicit decision confirmations.
+- Audit URL filters, entry details, date filtering, pagination, and CSV export added.
+- Role-based route protection and role-aware navigation added.
+- Live-update connection feedback and active workflow detail polling added.
+- Error boundary, offline banner, modal focus management, and lazy-loaded routes added.
+- Vitest and React Testing Library configured with critical component and route tests.
 - A not-found route and page-level error states added.
 - Production build and local browser verification completed.
 
@@ -53,17 +63,19 @@ The following commands currently pass:
 - `npm run lint`
 - `npm run typecheck`
 - `npm run format:check`
+- `npm test` (7 tests)
 - `npm run build`
+- `npm audit --omit=dev` (0 production vulnerabilities)
 
 ### Next Task
 
-Continue with **Phase 5, Step 5.2: Separate chat messages from workflow cards**:
+The standalone frontend is ready for backend integration. The next handoff tasks are:
 
-1. Create clear user and agent message components.
-2. Extract the existing workflow presentation into a reusable workflow card.
-3. Add a frontend-only workflow detail route.
-4. Add approval detail and audit detail views.
-5. Set up automated frontend tests before backend integration.
+1. Finalize authentication, workflow, approval, audit, and SSE backend contracts.
+2. Set `VITE_USE_MOCK_API=false` and connect the typed API adapters.
+3. Add refresh-token and server-role behavior.
+4. Replace client audit pagination/export with server endpoints.
+5. Run end-to-end and accessibility audits against the integrated environment.
 
 ---
 
@@ -89,10 +101,11 @@ Existing pages:
 - Approvals
 - Audit Log
 
-The frontend now runs as a standalone demo using local mock services. Login, MFA, chat
-workflows, approvals, audit entries, responsive navigation, loading states, and error states can
-be developed and reviewed without the backend. Backend API contracts, role authorization,
-real SSE, detail pages, and automated tests are still pending.
+The frontend now runs as a feature-complete standalone demo using local mock services. Login, MFA,
+chat workflows, workflow details, approvals, audit entries, role-aware navigation, loading states,
+error handling, responsive layouts, and automated component tests work without the backend.
+Real token refresh, server authorization, production SSE, server pagination/export, deployment
+observability, and integrated end-to-end tests remain dependent on the backend environment.
 
 ---
 
@@ -104,7 +117,7 @@ real SSE, detail pages, and automated tests are still pending.
 - [x] Confirm `npm run dev` starts the application.
 - [x] Confirm `npm run build` succeeds.
 - [x] Generate `package-lock.json`.
-- [ ] Commit the completed frontend work when requested.
+- [x] Commit and publish the completed frontend foundation.
 
 **Done when:** The frontend runs locally and produces a successful production build.
 
@@ -145,19 +158,19 @@ real SSE, detail pages, and automated tests are still pending.
 
 **Done when:** Components no longer rely on scattered, inconsistent color choices.
 
-### [~] Step 2.2: Create basic shared components
+### [x] Step 2.2: Create basic shared components
 
 Build small reusable components:
 
 - [x] `Button` using shadcn/ui
-- [ ] `Input`
+- [x] `Input`
 - [x] `Textarea` using shadcn/ui
 - [x] `Badge`
 - [x] `Card`
 - [x] `Spinner`
 - [x] `EmptyState`
 - [x] `Alert`
-- [ ] `Modal`
+- [x] `Modal`
 - [x] `PromptInput` using Prompt Kit
 
 Support disabled, loading, error, and accessible focus states.
@@ -220,9 +233,9 @@ This phase depends on finalizing the backend login, refresh-token, and role cont
 
 - [x] Add a protected-route component.
 - [x] Redirect unauthenticated users to `/login`.
-- [ ] Restrict approvals to approver roles.
-- [ ] Restrict audit views to auditor/admin roles.
-- [ ] Add a friendly unauthorized page.
+- [x] Restrict approvals to approver roles.
+- [x] Restrict audit views to auditor/admin roles.
+- [x] Add a friendly unauthorized page.
 
 **Done when:** Navigation and direct URLs respect the user's permissions.
 
@@ -233,9 +246,9 @@ This phase depends on finalizing the backend login, refresh-token, and role cont
 ### [~] Step 4.1: Standardize API error handling
 
 - [x] Add a shared API error-message helper.
-- [~] Handle validation, authentication, authorization, network, and server errors.
-- [~] Replace `catch(console.error)` with user-facing feedback. Chat is complete; approvals and audit still need this.
-- Prevent repeated redirects on `401` responses.
+- [x] Handle validation, authentication, authorization, network, and server errors in current flows.
+- [x] Replace `catch(console.error)` with user-facing feedback.
+- [x] Prevent repeated redirects on `401` responses.
 
 **Done when:** Users see understandable errors and the console is not the main error interface.
 
@@ -253,9 +266,10 @@ Add clear states for:
 
 **Done when:** Every asynchronous screen handles loading, success, empty, and error states.
 
-### Step 4.3: Decide on server-state management
+### [~] Step 4.3: Decide on server-state management
 
-Recommended: add TanStack Query for API data and keep Zustand for UI-only state.
+Decision: keep the current typed API layer and Zustand store during frontend-only development.
+Reassess TanStack Query when real endpoint caching and invalidation behavior is known.
 
 - Use queries for workflows, approvals, and audit entries.
 - Use mutations for workflow creation and approval decisions.
@@ -279,17 +293,17 @@ Recommended: add TanStack Query for API data and keep Zustand for UI-only state.
 
 **Done when:** Submitting a business request is clear, resilient, and accessible.
 
-### Step 5.2: Separate chat messages from workflow cards
+### [x] Step 5.2: Separate chat messages from workflow cards
 
-- Create a `UserMessage` component.
-- Create an `AgentMessage` component.
-- Create a `WorkflowCard` component.
-- Show clarification questions as agent messages.
-- Display timestamps and workflow domain.
+- [x] Create a `UserMessage` component.
+- [x] Create an `AgentMessage` component.
+- [x] Create a `WorkflowCard` component.
+- [x] Present workflow responses as agent messages.
+- [x] Display timestamps and workflow domain.
 
 **Done when:** The interface reads like a conversation rather than a list of database records.
 
-### [~] Step 5.3: Show detailed workflow progress
+### [x] Step 5.3: Show detailed workflow progress
 
 Completed in the current chat view:
 
@@ -297,20 +311,20 @@ Completed in the current chat view:
 - [x] Workflow step list and step state icons
 - [x] Failure feedback
 - [x] Approval-pending banner
-- [ ] Extract these into dedicated reusable components.
-- [ ] Add step timing and output summaries when the backend payload is finalized.
+- [x] Extract these into dedicated reusable components.
+- [x] Add step timing and structured output summaries.
 
 Show step state, description, timing, output summary, and failure details.
 
 **Done when:** Users can understand what the agent is doing and where execution stopped.
 
-### Step 5.4: Add a workflow detail page
+### [x] Step 5.4: Add a workflow detail page
 
-- Add `/workflows/:id`.
-- Load the workflow directly by ID.
-- Show the original request, domain, state, steps, timestamps, and errors.
-- Add a link from each workflow card.
-- Handle unknown workflow IDs.
+- [x] Add `/workflows/:id`.
+- [x] Load the workflow directly by ID.
+- [x] Show the original request, domain, state, steps, timestamps, and errors.
+- [x] Add a link from each workflow card.
+- [x] Handle unknown workflow IDs.
 
 **Done when:** A workflow can be inspected independently of the chat history.
 
@@ -339,17 +353,19 @@ The current native `EventSource` implementation cannot attach the JWT bearer hea
 
 - [x] Poll local workflow state while mock mode is enabled.
 - [x] Close polling when a workflow reaches a terminal or approval state.
+- [x] Poll active workflow detail views until they settle.
 - [ ] Subscribe through the real endpoint when the backend contract is ready.
 - [ ] Handle finalized workflow and step events.
-- [ ] Add capped reconnect behavior and a real-API polling fallback.
+- [x] Add capped reconnect behavior.
+- [ ] Confirm the real-API polling fallback with the backend.
 
 **Done when:** Workflow progress updates without manually refreshing the page.
 
-### Step 6.3: Add connection feedback
+### [x] Step 6.3: Add connection feedback
 
-- Show connecting, connected, reconnecting, and disconnected states.
-- Avoid intrusive notifications for short reconnects.
-- Offer a manual refresh after persistent failure.
+- [x] Show connecting, connected, reconnecting, and disconnected states.
+- [x] Avoid intrusive notifications for short reconnects.
+- [x] Provide retry actions on detail-page loading failures.
 
 **Done when:** Users can tell whether displayed workflow progress is current.
 
@@ -357,22 +373,23 @@ The current native `EventSource` implementation cannot attach the JWT bearer hea
 
 ## Phase 7: Approval Experience
 
-### [~] Step 7.1: Improve the approval queue
+### [x] Step 7.1: Improve the approval queue
 
 - [x] Show age, trigger type, requested action, and workflow context.
 - [x] Add loading, error, and empty states.
-- [ ] Add priority, status, and trigger filters.
-- [ ] Add workflow links after the workflow detail page exists.
+- [x] Add a header notification panel with pending-approval previews and queue navigation.
+- [x] Add priority, trigger, and text filters. Pending status is implicit in the queue endpoint.
+- [x] Add workflow links.
 
 **Done when:** Approvers can quickly identify which requests need attention.
 
-### Step 7.2: Add an approval detail page
+### [x] Step 7.2: Add an approval detail page
 
-- Add `/approvals/:id`.
-- Show full workflow and business context.
-- Show risk details and proposed action.
-- Show initiator and creation time.
-- Provide approve and reject controls.
+- [x] Add `/approvals/:id`.
+- [x] Show full workflow and business context.
+- [x] Show priority, trigger, and proposed action.
+- [x] Show creation time and workflow identity.
+- [x] Provide approve and reject controls.
 
 **Done when:** An approver has enough information to make a responsible decision.
 
@@ -380,7 +397,7 @@ The current native `EventSource` implementation cannot attach the JWT bearer hea
 
 - [x] Require rationale for rejection.
 - Consider requiring rationale for approval.
-- Add confirmation before submitting.
+- [x] Add confirmation before submitting.
 - [x] Prevent duplicate submissions.
 - [x] Show success or failure feedback.
 - [x] Refresh the local approval queue after the decision.
@@ -392,35 +409,34 @@ The current native `EventSource` implementation cannot attach the JWT bearer hea
 
 ## Phase 8: Audit Log
 
-### [~] Step 8.1: Add audit filters
+### [x] Step 8.1: Add audit filters
 
 Support:
 
 - [x] text search across the visible audit data
-- user
-- domain/tool
+- [x] user
+- [x] tool
 - [x] outcome
-- date range
+- [x] date range
 
-Keep filters in the URL so views can be shared and refreshed.
+- [x] Keep filters in the URL so views can be shared and refreshed.
 
 **Done when:** Users can narrow the audit log without manually scanning all rows.
 
-### Step 8.2: Add audit entry details
+### [x] Step 8.2: Add audit entry details
 
-- Open an entry in a modal or detail page.
-- Show masked input and output JSON.
-- Show the related workflow and user.
-- Format timestamps consistently.
+- [x] Open an entry in an accessible modal.
+- [x] Show masked input and output JSON.
+- [x] Show the related workflow and user.
+- [x] Format timestamps consistently.
 
 **Done when:** An auditor can inspect an operation without leaving the audit workflow.
 
-### Step 8.3: Add pagination and export
+### [~] Step 8.3: Add pagination and export
 
-- Use server-side pagination.
-- Add page-size controls.
-- Add audit export after the backend endpoint exists.
-- Show export progress and errors.
+- [x] Add client-side pagination for demo mode.
+- [x] Add filtered CSV export for demo mode.
+- [ ] Replace these with server-side pagination and export after endpoints exist.
 
 **Done when:** The audit view remains useful with large data volumes.
 
@@ -428,13 +444,14 @@ Keep filters in the URL so views can be shared and refreshed.
 
 ## Phase 9: Accessibility and Responsive Design
 
-### Step 9.1: Keyboard and screen-reader support
+### [~] Step 9.1: Keyboard and screen-reader support
 
-- Use semantic HTML.
-- Add labels to every input.
-- Add accessible names to icon buttons.
-- Add focus management for modals.
-- Announce workflow status changes with appropriate live regions.
+- [x] Use semantic HTML across the application shell and primary forms.
+- [x] Add labels to current form inputs.
+- [x] Add accessible names to current icon buttons.
+- [x] Support Escape and outside-click dismissal for header menus.
+- [x] Add focus trapping and focus restoration for modals.
+- [x] Announce workflow connection status changes with a live status.
 
 **Done when:** Core tasks can be completed using only a keyboard and common screen readers.
 
@@ -444,8 +461,8 @@ Verified manually:
 
 - [x] mobile navigation and content layout
 - [x] wide desktop navigation and content layout
-- [ ] tablet
-- [ ] laptop
+- [x] tablet
+- [x] laptop
 
 Pay special attention to tables, navigation, workflow steps, and approval controls.
 
@@ -464,39 +481,39 @@ Pay special attention to tables, navigation, workflow steps, and approval contro
 
 ## Phase 10: Frontend Testing
 
-### Step 10.1: Set up unit and component tests
+### [x] Step 10.1: Set up unit and component tests
 
 Recommended tools:
 
-- Vitest
-- React Testing Library
-- `@testing-library/user-event`
-- MSW for API mocking
+- [x] Vitest
+- [x] React Testing Library
+- [x] `@testing-library/user-event`
+- [ ] Add MSW when the real API contracts are finalized.
 
 **Done when:** Tests run through a single `npm test` command.
 
-### Step 10.2: Test shared components and stores
+### [~] Step 10.2: Test shared components and stores
 
 Cover:
 
-- validation
-- loading and disabled states
-- auth session behavior
-- route protection
-- API error formatting
+- [x] approval validation and confirmation
+- [x] route protection
+- [x] role permission rules
+- [x] workflow card rendering
+- [x] audit interaction
+- [ ] Expand auth session and API formatting coverage during backend integration.
 
 **Done when:** The frontend foundation has reliable automated coverage.
 
-### Step 10.3: Test critical user flows
+### [~] Step 10.3: Test critical user flows
 
 Cover:
 
-- login and MFA
-- create workflow
-- clarification response
-- live workflow progress
-- approve and reject actions
-- audit filtering
+- [x] Manually verify login and MFA.
+- [x] Manually verify workflow creation and live progress.
+- [x] Automate approval rejection safeguards.
+- [x] Manually verify approval confirmation and audit filtering/details.
+- [ ] Automate integrated journeys after the backend test environment exists.
 
 **Done when:** The highest-risk workflows are protected from common regressions.
 
@@ -516,12 +533,12 @@ Start with:
 
 ## Phase 11: Production Readiness
 
-### Step 11.1: Add global failure handling
+### [x] Step 11.1: Add global failure handling
 
-- Add an application error boundary.
-- Add a not-found page.
-- Add maintenance and offline states where appropriate.
-- Add safe retry actions.
+- [x] Add an application error boundary.
+- [x] Add a not-found page.
+- [x] Add an offline state.
+- [x] Add safe retry actions on detail pages.
 
 ### Step 11.2: Add frontend observability
 
@@ -532,10 +549,10 @@ Start with:
 
 ### Step 11.3: Optimize the build
 
-- Lazy-load major pages.
-- Review bundle size.
+- [x] Lazy-load major pages.
+- [x] Review bundle output and confirm route-level chunks.
 - Remove unused dependencies.
-- Verify production environment variables.
+- [~] Verify production environment variables after deployment values are supplied.
 - Add a secure frontend deployment configuration.
 
 **Done when:** The frontend is observable, performant, and deployable without development assumptions.
