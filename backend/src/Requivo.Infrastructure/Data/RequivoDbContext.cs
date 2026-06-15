@@ -16,6 +16,8 @@ public class RequivoDbContext(DbContextOptions<RequivoDbContext> options) : DbCo
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
     public DbSet<AuditEntry> AuditEntries => Set<AuditEntry>();
     public DbSet<AppUser> Users => Set<AppUser>();
+    public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -44,6 +46,26 @@ public class RequivoDbContext(DbContextOptions<RequivoDbContext> options) : DbCo
         {
             e.HasKey(u => u.Id);
             e.HasIndex(u => u.Email).IsUnique();
+        });
+
+        mb.Entity<ChatSession>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.UserId).IsRequired();
+            e.Property(s => s.Title).IsRequired();
+            e.HasIndex(s => new { s.UserId, s.UpdatedAt });
+            e.HasMany(s => s.Messages)
+             .WithOne(m => m.Session)
+             .HasForeignKey(m => m.SessionId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        mb.Entity<ChatMessage>(e =>
+        {
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Role).IsRequired();
+            e.Property(m => m.Content).IsRequired();
+            e.HasIndex(m => new { m.SessionId, m.CreatedAt });
         });
 
         mb.Entity<AuditEntry>(e =>

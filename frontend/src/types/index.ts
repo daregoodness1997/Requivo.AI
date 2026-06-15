@@ -116,3 +116,34 @@ export interface MfaVerifyRequest {
 export interface MfaDisableRequest {
   totpCode: string;
 }
+
+export type ChatRole = 'user' | 'assistant';
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  lastMessagePreview: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  sessionId: string;
+  role: ChatRole;
+  content: string;
+  workflowId: string | null;
+  createdAt: string;
+}
+
+export interface SendChatMessageRequest {
+  sessionId?: string;
+  content: string;
+}
+
+export interface SendChatMessageResponse {
+  session: ChatSession;
+  userMessage: ChatMessage;
+  assistantMessage: ChatMessage;
+  workflow: Workflow;
+}

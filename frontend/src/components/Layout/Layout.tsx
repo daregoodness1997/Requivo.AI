@@ -1,4 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
+import { chatApi } from '@/api/chat';
 import { approvalApi } from '@/api/workflow';
 import { useWorkflowStore } from '@/store/workflowStore';
 import Sidebar from './Sidebar';
@@ -6,7 +8,9 @@ import Header from './Header';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const pathname = useLocation().pathname;
   const setPendingApprovals = useWorkflowStore((state) => state.setPendingApprovals);
+  const setSessions = useWorkflowStore((state) => state.setSessions);
 
   useEffect(() => {
     approvalApi
@@ -14,6 +18,37 @@ export default function Layout({ children }: { children: ReactNode }) {
       .then(setPendingApprovals)
       .catch(() => undefined);
   }, [setPendingApprovals]);
+
+  useEffect(() => {
+    let active = true;
+
+    const refreshSessions = () => {
+      chatApi
+        .listSessions()
+        .then((sessions) => {
+          if (active) setSessions(sessions);
+        })
+        .catch(() => undefined);
+    };
+
+    refreshSessions();
+
+    const refreshOnFocus = () => refreshSessions();
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === 'visible') refreshSessions();
+    };
+
+    const intervalId = window.setInterval(refreshSessions, 30_000);
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnVisibility);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnVisibility);
+    };
+  }, [pathname, setSessions]);
 
   return (
     <div className="relative flex min-h-screen overflow-hidden pb-4">

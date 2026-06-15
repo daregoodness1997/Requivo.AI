@@ -108,7 +108,10 @@ public class AuthController(
         user.TotpSecret = secret;
         await db.SaveChangesAsync(ct);
 
-        var otpUri = $"otpauth://totp/Requivo:{Uri.EscapeDataString(user.Email)}?secret={secret}&issuer=Requivo";
+        var issuer = "Requivo";
+        var label = Uri.EscapeDataString($"{issuer}:{user.Email}");
+        var otpUri =
+            $"otpauth://totp/{label}?secret={secret}&issuer={Uri.EscapeDataString(issuer)}&algorithm=SHA1&digits=6&period=30";
         return Ok(new MfaSetupResponse(secret, otpUri));
     }
 

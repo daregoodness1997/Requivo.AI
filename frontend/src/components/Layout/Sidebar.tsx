@@ -12,7 +12,6 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useWorkflowStore } from '@/store/workflowStore';
-import { getWorkflowPreview, getWorkflowTitle } from '@/lib/chat';
 
 const links = [
   { to: '/chat', label: 'Chat', icon: MessageSquareText },
@@ -28,11 +27,12 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = useLocation().pathname;
-  const workflows = useWorkflowStore((state) => state.workflows);
-  const activeWorkflowId = useWorkflowStore((state) => state.activeWorkflowId);
-  const setActiveWorkflow = useWorkflowStore((state) => state.setActiveWorkflow);
+  const sessions = useWorkflowStore((state) => state.sessions);
+  const activeSessionId = useWorkflowStore((state) => state.activeSessionId);
+  const clearChatContext = useWorkflowStore((state) => state.clearChatContext);
+  const setActiveSession = useWorkflowStore((state) => state.setActiveSession);
 
-  const sortedHistory = [...workflows].sort(
+  const sortedHistory = [...sessions].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
   );
 
@@ -109,7 +109,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
             <NavLink
               to="/chat"
               onClick={() => {
-                setActiveWorkflow(null);
+                clearChatContext();
                 onClose();
               }}
               className="mb-2 flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
@@ -122,15 +122,15 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               {sortedHistory.length === 0 ? (
                 <p className="px-3 text-xs text-cyan-200/70">No chats yet</p>
               ) : (
-                sortedHistory.map((workflow) => {
-                  const isActiveChat = pathname === '/chat' && activeWorkflowId === workflow.id;
+                sortedHistory.map((session) => {
+                  const isActiveChat = pathname === '/chat' && activeSessionId === session.id;
 
                   return (
                     <NavLink
-                      key={workflow.id}
+                      key={session.id}
                       to="/chat"
                       onClick={() => {
-                        setActiveWorkflow(workflow.id);
+                        setActiveSession(session.id);
                         onClose();
                       }}
                       className={cn(
@@ -140,16 +140,14 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                           : 'text-cyan-100/95 hover:bg-white/10 hover:text-white',
                       )}
                     >
-                      <p className="line-clamp-2 text-sm font-medium leading-5">
-                        {getWorkflowTitle(workflow)}
-                      </p>
+                      <p className="line-clamp-2 text-sm font-medium leading-5">{session.title}</p>
                       <p
                         className={cn(
                           'mt-1 line-clamp-2 text-[11px] leading-4',
                           isActiveChat ? 'text-slate-500' : 'text-cyan-200/80',
                         )}
                       >
-                        {getWorkflowPreview(workflow)}
+                        {session.lastMessagePreview}
                       </p>
                       <p
                         className={cn(
@@ -157,7 +155,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                           isActiveChat ? 'text-slate-500' : 'text-cyan-200/70',
                         )}
                       >
-                        {formatDistanceToNow(new Date(workflow.updatedAt), {
+                        {formatDistanceToNow(new Date(session.updatedAt), {
                           addSuffix: true,
                         })}
                       </p>

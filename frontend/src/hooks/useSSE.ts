@@ -1,55 +1,53 @@
 import { useEffect, useRef } from 'react';
 import { workflowApi } from '@/api/workflow';
-import { env } from '@/config/env';
 import { useWorkflowStore } from '@/store/workflowStore';
-import type { Workflow } from '@/types';
 
-/** Subscribes to live workflow updates, using polling while frontend demo mode is active. */
+/**
+ * Subscribes to live workflow updates using authenticated polling.
+ *
+ * EventSource cannot send Authorization headers from localStorage-based auth,
+ * so polling keeps updates working reliably across environments.
+ */
 export function useSSE(workflowId: string | null) {
   const { upsertWorkflow } = useWorkflowStore();
-  const esRef = useRef<EventSource | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!workflowId) return;
 
-    if (env.useMockApi) {
-      let active = true;
-      let intervalId = 0;
+    let active = true;
+    let completed = false;
 
-      const poll = async () => {
-        try {
-          const updated = await workflowApi.getById(workflowId);
-          if (!active) return;
-          upsertWorkflow(updated);
-          if (updated.state === 'Completed' || updated.state === 'Failed') {
-            window.clearInterval(intervalId);
+    const poll = async () => {
+      try {
+        const updated = await workflowApi.getById(workflowId);
+        if (!active) return;
+        upsertWorkflow(updated);
+
+        if (updated.state === 'Completed' || updated.state === 'Failed') {
+          completed = true;
+          if (intervalRef.current) {
+            window.clearInterval(intervalRef.current);
+            intervalRef.current = null;
           }
-        } catch {
-          window.clearInterval(intervalId);
         }
-      };
+      } catch {
+        if (intervalRef.current) {
+          window.clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    };
 
-      intervalId = window.setInterval(() => void poll(), 500);
-      void poll();
-
-      return () => {
-        active = false;
-        window.clearInterval(intervalId);
-      };
-    }
-
-    const url = `${env.sseBaseUrl}/${workflowId}`;
-    esRef.current = new EventSource(url, { withCredentials: true });
-
-    esRef.current.addEventListener('workflow-update', (event) => {
-      const updated: Workflow = JSON.parse(event.data);
-      upsertWorkflow(updated);
-    });
-
-    esRef.current.onerror = () => esRef.current?.close();
+    intervalRef.current = window.setInterval(() => void poll(), 1000);
+    void poll();
 
     return () => {
-      esRef.current?.close();
+      active = false;
+      if (!completed && intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, [workflowId, upsertWorkflow]);
 }

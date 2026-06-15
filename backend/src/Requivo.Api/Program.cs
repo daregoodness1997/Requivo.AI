@@ -12,6 +12,9 @@ using Requivo.Orchestration;
 using Requivo.Tools;
 using Requivo.Api.Security;
 using Microsoft.AspNetCore.Authorization;
+using System.Text.Json.Serialization;
+
+EnvFileLoader.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
@@ -39,10 +42,12 @@ builder.Services.AddScoped<ITool, HRTool>();
 builder.Services.AddScoped<ITool, ReportingTool>();
 
 // ── Orchestration ──────────────────────────────────────────────
-builder.Services.AddScoped<IWorkflowEngine, WorkflowEngine>();
+builder.Services.AddScoped<WorkflowEngine>();
+builder.Services.AddScoped<IWorkflowEngine>(sp => sp.GetRequiredService<WorkflowEngine>());
 builder.Services.AddScoped<IApprovalService, HitlService>();
 builder.Services.AddScoped<IEmailService, SendGridEmailService>();
 builder.Services.AddScoped<ISlackService, SlackService>();
+builder.Services.AddScoped<IProcurementGateway, ErpProcurementGateway>();
 
 // ── Auth (JWT) ─────────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -90,7 +95,11 @@ builder.Services.AddAuthorization(options =>
 });
 
 // ── API / Swagger ──────────────────────────────────────────────
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -163,3 +172,49 @@ if (seedTestUsers || app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+internal static class EnvFileLoader
+{
+    public static void Load()
+    {
+        var candidates = new[]
+        {
+            Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../.env")),
+        };
+
+        var envPath = candidates.FirstOrDefault(File.Exists);
+        if (string.IsNullOrWhiteSpace(envPath))
+        {
+            return;
+        }
+
+        foreach (var line in File.ReadAllLines(envPath))
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith('#'))
+            {
+                continue;
+            }
+
+            var separator = trimmed.IndexOf('=');
+            if (separator <= 0)
+            {
+                continue;
+            }
+
+            var key = trimmed[..separator].Trim();
+            var value = trimmed[(separator + 1)..].Trim();
+
+            if (value.Length >= 2 && value.StartsWith('"') && value.EndsWith('"'))
+            {
+                value = value[1..^1];
+            }
+
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(key)))
+            {
+                Environment.SetEnvironmentVariable(key, value);
+            }
+        }
+    }
+}

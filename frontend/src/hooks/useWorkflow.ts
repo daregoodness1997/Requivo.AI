@@ -1,19 +1,51 @@
 import { useCallback } from 'react';
 import { workflowApi } from '@/api/workflow';
 import { useWorkflowStore } from '@/store/workflowStore';
+import { chatApi } from '@/api/chat';
 
 export function useWorkflow() {
-  const { upsertWorkflow, setActiveWorkflow } = useWorkflowStore();
+  const {
+    activeSessionId,
+    upsertWorkflow,
+    upsertSession,
+    addMessages,
+    setActiveSession,
+    setActiveWorkflow,
+  } = useWorkflowStore();
 
   const startWorkflow = useCallback(
     async (userInput: string) => {
-      const workflow = await workflowApi.start({ userInput });
-      upsertWorkflow(workflow);
-      setActiveWorkflow(workflow.id);
-      return workflow;
+      const response = await chatApi.sendMessage({
+        sessionId: activeSessionId ?? undefined,
+        content: userInput,
+      });
+
+      upsertSession(response.session);
+      addMessages(response.session.id, [response.userMessage, response.assistantMessage]);
+      upsertWorkflow(response.workflow);
+      setActiveSession(response.session.id);
+      setActiveWorkflow(response.workflow.id);
+
+      return response.workflow;
     },
-    [upsertWorkflow, setActiveWorkflow],
+    [
+      activeSessionId,
+      upsertSession,
+      addMessages,
+      upsertWorkflow,
+      setActiveSession,
+      setActiveWorkflow,
+    ],
   );
 
-  return { startWorkflow };
+  const refreshWorkflow = useCallback(
+    async (workflowId: string) => {
+      const workflow = await workflowApi.getById(workflowId);
+      upsertWorkflow(workflow);
+      return workflow;
+    },
+    [upsertWorkflow],
+  );
+
+  return { startWorkflow, refreshWorkflow };
 }

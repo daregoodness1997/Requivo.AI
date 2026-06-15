@@ -3,6 +3,7 @@ import { LoaderCircle, SendHorizontal } from 'lucide-react';
 import Alert from '@/components/ui/Alert';
 import { Button } from '@/components/ui/button';
 import { PromptInput, PromptInputActions, PromptInputTextarea } from '@/components/ui/prompt-input';
+import { PromptSuggestion } from '@/components/ui/prompt-suggestion';
 import { getErrorMessage } from '@/lib/errors';
 
 interface Props {
@@ -98,10 +99,11 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
               </span>
               <div className="flex gap-2">
                 {group.prompts.map((example) => (
-                  <button
+                  <PromptSuggestion
                     key={example}
-                    type="button"
-                    className="shrink-0 rounded-full border border-slate-200/90 bg-white/85 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50/70 hover:text-cyan-800"
+                    variant="outline"
+                    size="sm"
+                    className="h-auto shrink-0 rounded-full border-slate-200/90 bg-white/85 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50/70 hover:text-cyan-800"
                     disabled={disabled || isSubmitting}
                     onClick={() => {
                       setError(null);
@@ -109,7 +111,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
                     }}
                   >
                     {example}
-                  </button>
+                  </PromptSuggestion>
                 ))}
               </div>
             </div>

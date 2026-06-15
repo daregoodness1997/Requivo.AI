@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { KeyRound, ShieldCheck, ShieldOff } from 'lucide-react';
+import { toDataURL } from 'qrcode';
 import Alert from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const [setupResult, setSetupResult] = useState<{ secret: string; otpAuthUri: string } | null>(
     null,
   );
+  const [otpQrCode, setOtpQrCode] = useState<string | null>(null);
   const [verifyCode, setVerifyCode] = useState('');
   const [disableCode, setDisableCode] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -69,6 +71,33 @@ export default function ProfilePage() {
       setIsActionLoading(false);
     }
   };
+
+  useEffect(() => {
+    let active = true;
+
+    if (!setupResult?.otpAuthUri) {
+      setOtpQrCode(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    toDataURL(setupResult.otpAuthUri, {
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 320,
+    })
+      .then((dataUrl: string) => {
+        if (active) setOtpQrCode(dataUrl);
+      })
+      .catch(() => {
+        if (active) setOtpQrCode(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [setupResult?.otpAuthUri]);
 
   const verifyMfa = async (event: FormEvent) => {
     event.preventDefault();
@@ -196,6 +225,16 @@ export default function ProfilePage() {
             <div className="rounded-xl border border-cyan-200 bg-cyan-50/40 p-4">
               <p className="text-xs uppercase tracking-wide text-cyan-700">Secret</p>
               <p className="mt-1 break-all font-mono text-sm text-cyan-900">{setupResult.secret}</p>
+              <p className="mt-3 text-xs uppercase tracking-wide text-cyan-700">Scan QR code</p>
+              {otpQrCode ? (
+                <div className="mt-2 inline-flex rounded-lg border border-cyan-200 bg-white p-2">
+                  <img src={otpQrCode} alt="MFA setup QR code" className="h-44 w-44" />
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-cyan-800">
+                  QR code unavailable. Use the OTP URI below in your authenticator app.
+                </p>
+              )}
               <p className="mt-3 text-xs uppercase tracking-wide text-cyan-700">OTP URI</p>
               <p className="mt-1 break-all font-mono text-xs text-cyan-900">
                 {setupResult.otpAuthUri}

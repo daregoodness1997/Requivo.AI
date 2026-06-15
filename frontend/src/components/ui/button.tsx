@@ -66,6 +66,4 @@ function Button({
   );
 }
 
-// shadcn exports variants so other components can compose the same button styles.
-// eslint-disable-next-line react-refresh/only-export-components
 export { Button, buttonVariants };
