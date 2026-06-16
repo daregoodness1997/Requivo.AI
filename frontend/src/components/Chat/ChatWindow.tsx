@@ -1,7 +1,7 @@
 import type { ChatMessage, Workflow, PlanResult } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Check, Circle, Clock3, LoaderCircle, Sparkles, X } from 'lucide-react';
+import { Check, Circle, Clock3, LoaderCircle, SendHorizontal, Sparkles, X } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
@@ -54,6 +54,7 @@ interface Props {
   workflows: Workflow[];
   activeSessionId: string | null;
   onAction?: (prompt: string) => Promise<unknown> | unknown;
+  onRespond?: (sessionId: string, input: string) => Promise<unknown>;
 }
 
 interface InvoiceAction {
@@ -174,7 +175,82 @@ function ErrorBubble({ content }: { content: string }) {
   );
 }
 
-function AssistantContent({ message }: { message: ChatMessage }) {
+function PromptBubble({ data, onRespond, sessionId }: { data: Record<string, unknown> & { question: string; options?: string[]; stepToolName?: string; stepDescription?: string }; onRespond?: Props['onRespond']; sessionId: string }) {
+  const [input, setInput] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const send = async (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || isSending) return;
+    setIsSending(true);
+    try {
+      await onRespond?.(sessionId, trimmed);
+      setInput('');
+    } finally {
+      setIsSending(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 px-4 py-3 text-sm">
+        <p className="font-medium text-amber-800">{data.question}</p>
+        {data.stepToolName && (
+          <p className="mt-0.5 text-xs text-amber-600">
+            While processing <span className="font-semibold">{data.stepToolName}</span>
+            {data.stepDescription && <> — {data.stepDescription}</>}
+          </p>
+        )}
+      </div>
+
+      {data.options && data.options.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {data.options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              disabled={isSending}
+              onClick={() => void send(option)}
+              className="rounded-full border border-amber-200 bg-white px-3.5 py-1.5 text-xs font-medium text-amber-800 transition-colors hover:border-amber-400 hover:bg-amber-100 disabled:opacity-50"
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <form
+        onSubmit={(e) => { e.preventDefault(); void send(input); }}
+        className="flex items-center gap-2"
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your response..."
+          disabled={isSending}
+          className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white/90 px-3.5 py-2 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:opacity-50"
+        />
+        <button
+          type="submit"
+          disabled={isSending || !input.trim()}
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-600 text-white transition-colors hover:bg-amber-700 disabled:opacity-40"
+        >
+          {isSending ? (
+            <LoaderCircle className="size-4 animate-spin" />
+          ) : (
+            <SendHorizontal className="size-4" />
+          )}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function AssistantContent({ message, onRespond }: { message: ChatMessage; onRespond?: Props['onRespond'] }) {
   const type = message.contentType ?? 'text';
 
   switch (type) {
@@ -186,6 +262,12 @@ function AssistantContent({ message }: { message: ChatMessage }) {
       return <ResultBubble content={message.content} plan={message.plan} />;
     case 'error':
       return <ErrorBubble content={message.content} />;
+    case 'prompt':
+      return message.plan ? (
+        <PromptBubble data={message.plan as unknown as Record<string, unknown> & { question: string }} onRespond={onRespond} sessionId={message.sessionId} />
+      ) : (
+        <ErrorBubble content={message.content} />
+      );
     default:
       return (
         <MessageContent markdown className="max-w-[90%]">
@@ -296,7 +378,7 @@ function WorkflowReviewPanel({ workflow, onAction, style }: { workflow: Workflow
   );
 }
 
-export default function ChatWindow({ messages, workflows, activeSessionId, onAction }: Props) {
+export default function ChatWindow({ messages, workflows, activeSessionId, onAction, onRespond }: Props) {
   const lastWorkflowMessage = [...messages].reverse().find((m) => m.workflowId);
   const activeWorkflow = lastWorkflowMessage?.workflowId
     ? workflows.find((w) => w.id === lastWorkflowMessage.workflowId)
@@ -366,7 +448,7 @@ export default function ChatWindow({ messages, workflows, activeSessionId, onAct
                       {message.content}
                     </MessageContent>
                   ) : (
-                    <AssistantContent message={message} />
+                    <AssistantContent message={message} onRespond={onRespond} />
                   )}
 
                   {isUser && <MessageAvatar src="" alt="You" fallback="You" />}

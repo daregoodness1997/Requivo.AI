@@ -5,6 +5,7 @@ public enum WorkflowState
     Pending,
     Planning,
     WaitingApproval,
+    WaitingInput,
     InProgress,
     Completed,
     Failed

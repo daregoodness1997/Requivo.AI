@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import ChatWindow from '@/components/Chat/ChatWindow';
 import ChatInput from '@/components/Chat/ChatInput';
 import Alert from '@/components/ui/Alert';
@@ -20,6 +20,8 @@ export default function ChatPage() {
     activeWorkflowId,
     setWorkflows,
     setMessages,
+    upsertSession,
+    addMessages,
     setActiveSession,
     setActiveWorkflow,
   } = useWorkflowStore();
@@ -79,6 +81,19 @@ export default function ChatPage() {
     };
   }, [activeSessionId, setActiveWorkflow, setMessages]);
 
+  const handleRespond = useCallback(
+    async (sessionId: string, input: string) => {
+      const response = await chatApi.sendMessage({ sessionId, content: input });
+      upsertSession(response.session);
+      const msgs = [response.userMessage, response.assistantMessage].filter((m): m is NonNullable<typeof m> => m != null);
+      addMessages(response.session.id, msgs);
+      if (response.assistantMessage) {
+        setActiveWorkflow(response.workflow.id);
+      }
+    },
+    [addMessages, upsertSession, setActiveWorkflow],
+  );
+
   const activeMessages = activeSessionId ? (messagesBySession[activeSessionId] ?? []) : [];
 
   return (
@@ -99,6 +114,7 @@ export default function ChatPage() {
           workflows={workflows}
           activeSessionId={activeSessionId}
           onAction={startWorkflow}
+          onRespond={handleRespond}
         />
       )}
       <ChatInput onSubmit={startWorkflow} />

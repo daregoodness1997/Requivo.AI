@@ -791,7 +791,7 @@ export const mockWorkflowApi = {
     const domain = inferDomain(body.userInput);
     const now = new Date().toISOString();
     const steps = buildStepsForInput(body.userInput, domain);
-    const plan = buildPlan(domain, body.userInput);
+    const plan = buildPlan(domain);
     const workflow: Workflow = {
       id: crypto.randomUUID(),
       userInput: body.userInput,
@@ -912,7 +912,7 @@ export const mockChatApi = {
 
     const domain = inferDomain(body.content);
     const steps = buildStepsForInput(body.content, domain);
-    const plan = buildPlan(domain, body.content);
+    const plan = buildPlan(domain);
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),

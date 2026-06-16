@@ -95,10 +95,18 @@ public class WorkflowEngine(
             waitingStep.CompletedAt = DateTime.UtcNow;
             if (assistantMsg != null)
             {
-                assistantMsg.ContentType = "error";
-                assistantMsg.Content = workflow.FailureReason;
+                assistantMsg.ContentType = "prompt";
+                assistantMsg.PlanData = new
+                {
+                    promptType = "error_recovery",
+                    question = $"Unknown tool '{waitingStep.ToolName}'. How would you like to proceed?",
+                    options = new[] { "Skip this step", "Cancel workflow" },
+                    stepToolName = waitingStep.ToolName,
+                    stepDescription = waitingStep.Description,
+                };
+                assistantMsg.Content = $"Unknown tool '{waitingStep.ToolName}'.";
             }
-            await TransitionAsync(workflow, WorkflowState.Failed, ct);
+            await TransitionAsync(workflow, WorkflowState.WaitingInput, ct);
             return;
         }
 
@@ -124,11 +132,19 @@ public class WorkflowEngine(
             workflow.FailureReason = result.Error;
             if (assistantMsg != null)
             {
-                assistantMsg.ContentType = "error";
-                assistantMsg.Content = result.Error ?? $"Step failed: {waitingStep.ToolName}";
+                assistantMsg.ContentType = "prompt";
+                assistantMsg.PlanData = new
+                {
+                    promptType = "retry",
+                    question = result.Error ?? $"Step '{waitingStep.ToolName}' failed. How would you like to proceed?",
+                    options = new[] { "Retry", "Skip this step", "Cancel workflow" },
+                    stepToolName = waitingStep.ToolName,
+                    stepDescription = waitingStep.Description,
+                };
+                assistantMsg.Content = result.Error ?? $"Step '{waitingStep.ToolName}' failed.";
             }
             await db.SaveChangesAsync(ct);
-            await TransitionAsync(workflow, WorkflowState.Failed, ct);
+            await TransitionAsync(workflow, WorkflowState.WaitingInput, ct);
             return;
         }
 
@@ -141,6 +157,128 @@ public class WorkflowEngine(
         await db.SaveChangesAsync(ct);
         await TransitionAsync(workflow, WorkflowState.Completed, ct);
         await stateStore.DeleteAsync(workflow.Id.ToString(), ct);
+    }
+
+    public async Task<Workflow> SubmitInputAsync(Guid workflowId, string userInput, string userId, CancellationToken ct = default)
+    {
+        var workflow = await db.Workflows.FindAsync([workflowId], ct)
+                      ?? throw new KeyNotFoundException($"Workflow {workflowId} not found");
+
+        if (workflow.State != WorkflowState.WaitingInput)
+            throw new InvalidOperationException($"Workflow {workflowId} is not waiting for input (state: {workflow.State})");
+
+        var assistantMsg = await db.ChatMessages.FirstOrDefaultAsync(m => m.WorkflowId == workflow.Id, ct);
+        var promptType = assistantMsg?.PlanData is System.Text.Json.JsonElement planData
+            ? planData.TryGetProperty("promptType", out var pt) ? pt.GetString() : null
+            : null;
+
+        switch (promptType)
+        {
+            case "clarification":
+                workflow.UserInput = $"{workflow.UserInput} — {userInput}";
+                await db.SaveChangesAsync(ct);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = scopeFactory.CreateScope();
+                        var scopedEngine = scope.ServiceProvider.GetRequiredService<WorkflowEngine>();
+                        await scopedEngine.ExecuteWorkflowAsync(workflow.Id, userId, CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Background re-execution failed for workflow {Id}", workflow.Id);
+                    }
+                });
+                return workflow;
+
+            case "retry":
+            case "error_recovery":
+                var lower = userInput.ToLowerInvariant();
+                if (lower is "cancel" or "cancel workflow")
+                {
+                    workflow.FailureReason = "Cancelled by user";
+                    if (assistantMsg != null)
+                    {
+                        assistantMsg.ContentType = "text";
+                        assistantMsg.Content = "Workflow cancelled.";
+                    }
+                    await TransitionAsync(workflow, WorkflowState.Failed, ct);
+                    return workflow;
+                }
+
+                if (lower is "skip" or "skip this step")
+                {
+                    var nextStep = workflow.Steps.FirstOrDefault(s => s.State is WorkflowState.InProgress or WorkflowState.Failed);
+                    if (nextStep != null)
+                    {
+                        nextStep.State = WorkflowState.Completed;
+                        nextStep.CompletedAt = DateTime.UtcNow;
+                        nextStep.Output = new { status = "skipped", reason = "Skipped by user" };
+                    }
+                    if (assistantMsg != null)
+                    {
+                        assistantMsg.ContentType = "text";
+                        assistantMsg.Content = "Step skipped. Continuing workflow...";
+                    }
+                    await db.SaveChangesAsync(ct);
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            using var scope = scopeFactory.CreateScope();
+                            var scopedEngine = scope.ServiceProvider.GetRequiredService<WorkflowEngine>();
+                            await scopedEngine.ExecuteWorkflowAsync(workflow.Id, userId, CancellationToken.None);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(ex, "Background re-execution failed for workflow {Id}", workflow.Id);
+                        }
+                    });
+                    return workflow;
+                }
+
+                // Retry: re-execute the failed step
+                if (assistantMsg != null)
+                {
+                    assistantMsg.ContentType = "text";
+                    assistantMsg.Content = "Retrying...";
+                }
+                await db.SaveChangesAsync(ct);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = scopeFactory.CreateScope();
+                        var scopedEngine = scope.ServiceProvider.GetRequiredService<WorkflowEngine>();
+                        await scopedEngine.ExecuteWorkflowAsync(workflow.Id, userId, CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Background re-execution failed for workflow {Id}", workflow.Id);
+                    }
+                });
+                return workflow;
+
+            default:
+                // Unknown prompt type — treat as new context and continue
+                workflow.UserInput = userInput;
+                await db.SaveChangesAsync(ct);
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using var scope = scopeFactory.CreateScope();
+                        var scopedEngine = scope.ServiceProvider.GetRequiredService<WorkflowEngine>();
+                        await scopedEngine.ExecuteWorkflowAsync(workflow.Id, userId, CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "Background re-execution failed for workflow {Id}", workflow.Id);
+                    }
+                });
+                return workflow;
+        }
     }
 
     public async Task<Workflow> GetAsync(Guid workflowId, CancellationToken ct = default)
@@ -159,25 +297,49 @@ public class WorkflowEngine(
     {
         var context = new WorkflowContext { WorkflowId = wf.Id.ToString(), UserId = userId };
         ChatMessage? assistantMsg = null;
+        Requivo.AI.PlanResult? plan = null;
+        var isResume = wf.State is WorkflowState.WaitingInput or WorkflowState.WaitingApproval;
+        var hasPlan = wf.Domain is not null && wf.Steps.Count > 0;
 
         try
         {
             assistantMsg = await db.ChatMessages.FirstOrDefaultAsync(m => m.WorkflowId == wf.Id, ct);
 
+            var approvalStepIndex = -1;
+
+            if (isResume && hasPlan)
+            {
+                // Resume execution — skip planning, go straight to InProgress
+                approvalStepIndex = ComputeApprovalStepIndex(wf);
+                await TransitionAsync(wf, WorkflowState.InProgress, ct);
+                if (assistantMsg != null)
+                {
+                    assistantMsg.ContentType = "text";
+                    assistantMsg.Content = $"Resuming execution in **{wf.Domain}**...";
+                }
+                await db.SaveChangesAsync(ct);
+                goto executeSteps;
+            }
+
             await TransitionAsync(wf, WorkflowState.Planning, ct);
 
             // 1. Plan
-            var plan = await planner.PlanAsync(wf.UserInput, context, ct);
+            plan = await planner.PlanAsync(wf.UserInput, context, ct);
 
             if (plan.NeedsClarification)
             {
-                wf.FailureReason = plan.ClarificationQuestion;
                 if (assistantMsg != null)
                 {
-                    assistantMsg.ContentType = "error";
-                    assistantMsg.Content = plan.ClarificationQuestion;
+                    assistantMsg.ContentType = "prompt";
+                    assistantMsg.PlanData = new
+                    {
+                        promptType = "clarification",
+                        question = plan.ClarificationQuestion ?? "Could you provide more details?",
+                        options = Array.Empty<string>(),
+                    };
+                    assistantMsg.Content = plan.ClarificationQuestion ?? "Could you provide more details?";
                 }
-                await TransitionAsync(wf, WorkflowState.Failed, ct);
+                await TransitionAsync(wf, WorkflowState.WaitingInput, ct);
                 return;
             }
 
@@ -211,13 +373,15 @@ public class WorkflowEngine(
             }
             await db.SaveChangesAsync(ct);
 
-            var approvalRequired = RequiresHumanApproval(wf.UserInput, wf.Domain);
-            var approvalStepIndex = approvalRequired && wf.Steps.Count > 0 ? wf.Steps.Count - 1 : -1;
+            approvalStepIndex = ComputeApprovalStepIndex(wf);
 
             // 2. Execute steps
+            executeSteps:
             foreach (var step in wf.Steps)
             {
-                var plannedInput = step.Index < plan.Steps.Count ? plan.Steps[step.Index].Input : null;
+                if (step.State == WorkflowState.Completed) continue;
+
+                var plannedInput = plan is not null && step.Index < plan.Steps.Count ? plan.Steps[step.Index].Input : null;
 
                 if (step.Index == approvalStepIndex)
                 {
@@ -297,13 +461,20 @@ public class WorkflowEngine(
 
                 if (!result.Success)
                 {
-                    wf.FailureReason = result.Error;
                     if (assistantMsg != null)
                     {
-                        assistantMsg.ContentType = "error";
-                        assistantMsg.Content = result.Error ?? $"Step failed: {step.ToolName}";
+                        assistantMsg.ContentType = "prompt";
+                        assistantMsg.PlanData = new
+                        {
+                            promptType = "retry",
+                            question = result.Error ?? $"Step '{step.ToolName}' failed. How would you like to proceed?",
+                            options = new[] { "Retry", "Skip this step", "Cancel workflow" },
+                            stepToolName = step.ToolName,
+                            stepDescription = step.Description,
+                        };
+                        assistantMsg.Content = result.Error ?? $"Step '{step.ToolName}' failed.";
                     }
-                    await TransitionAsync(wf, WorkflowState.Failed, ct);
+                    await TransitionAsync(wf, WorkflowState.WaitingInput, ct);
                     return;
                 }
 
@@ -321,14 +492,25 @@ public class WorkflowEngine(
         catch (Exception ex)
         {
             logger.LogError(ex, "Workflow {Id} failed", wf.Id);
-            wf.FailureReason = ex.Message;
             if (assistantMsg != null)
             {
-                assistantMsg.ContentType = "error";
-                assistantMsg.Content = ex.Message;
+                assistantMsg.ContentType = "prompt";
+                assistantMsg.PlanData = new
+                {
+                    promptType = "error_recovery",
+                    question = $"An unexpected error occurred: {ex.Message}. What would you like to do?",
+                    options = new[] { "Retry", "Cancel workflow" },
+                };
+                assistantMsg.Content = $"An unexpected error occurred: {ex.Message}";
             }
-            await TransitionAsync(wf, WorkflowState.Failed, ct);
+            await TransitionAsync(wf, WorkflowState.WaitingInput, ct);
         }
+    }
+
+    private static int ComputeApprovalStepIndex(Workflow wf)
+    {
+        var approvalRequired = RequiresHumanApproval(wf.UserInput, wf.Domain);
+        return approvalRequired && wf.Steps.Count > 0 ? wf.Steps.Count - 1 : -1;
     }
 
     private static bool RequiresHumanApproval(string userInput, WorkflowDomain? domain)

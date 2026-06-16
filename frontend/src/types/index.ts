@@ -120,7 +120,7 @@ export interface MfaDisableRequest {
 
 export type ChatRole = 'user' | 'assistant';
 
-export type MessageContentType = 'text' | 'thinking' | 'plan' | 'result' | 'error';
+export type MessageContentType = 'text' | 'thinking' | 'plan' | 'result' | 'error' | 'prompt';
 
 export interface PlannedStep {
   toolName: string;
@@ -142,6 +142,14 @@ export interface ChatSession {
   lastMessagePreview: string;
 }
 
+export interface PromptData {
+  promptType: 'clarification' | 'retry' | 'confirmation' | 'error_recovery';
+  question: string;
+  options?: string[];
+  stepToolName?: string;
+  stepDescription?: string;
+}
+
 export interface ChatMessage {
   id: string;
   sessionId: string;
@@ -150,6 +158,7 @@ export interface ChatMessage {
   content: string;
   workflowId: string | null;
   plan?: PlanResult | null;
+  promptData?: PromptData | null;
   createdAt: string;
 }
 
@@ -161,6 +170,6 @@ export interface SendChatMessageRequest {
 export interface SendChatMessageResponse {
   session: ChatSession;
   userMessage: ChatMessage;
-  assistantMessage: ChatMessage;
+  assistantMessage: ChatMessage | null;
   workflow: Workflow;
 }
