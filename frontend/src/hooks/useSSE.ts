@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { workflowApi } from '@/api/workflow';
+import { chatApi } from '@/api/chat';
 import { useWorkflowStore } from '@/store/workflowStore';
 
 /**
@@ -8,9 +9,10 @@ import { useWorkflowStore } from '@/store/workflowStore';
  * EventSource cannot send Authorization headers from localStorage-based auth,
  * so polling keeps updates working reliably across environments.
  */
-export function useSSE(workflowId: string | null) {
-  const { upsertWorkflow } = useWorkflowStore();
+export function useSSE(workflowId: string | null, sessionId: string | null) {
+  const { upsertWorkflow, setMessages } = useWorkflowStore();
   const intervalRef = useRef<number | null>(null);
+  const lastStateRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!workflowId) return;
@@ -24,7 +26,14 @@ export function useSSE(workflowId: string | null) {
         if (!active) return;
         upsertWorkflow(updated);
 
-        if (updated.state === 'Completed' || updated.state === 'Failed') {
+        const currentState = updated.state;
+        if (lastStateRef.current && lastStateRef.current !== currentState && sessionId) {
+          const messages = await chatApi.listMessages(sessionId);
+          if (active) setMessages(sessionId, messages);
+        }
+        lastStateRef.current = currentState;
+
+        if (currentState === 'Completed' || currentState === 'Failed') {
           completed = true;
           if (intervalRef.current) {
             window.clearInterval(intervalRef.current);
@@ -49,5 +58,5 @@ export function useSSE(workflowId: string | null) {
         intervalRef.current = null;
       }
     };
-  }, [workflowId, upsertWorkflow]);
+  }, [workflowId, sessionId, upsertWorkflow, setMessages]);
 }

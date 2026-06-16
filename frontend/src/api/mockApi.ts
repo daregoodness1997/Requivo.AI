@@ -2,11 +2,17 @@ import type {
   ApprovalActionRequest,
   ApprovalRequest,
   AuditEntry,
+  ChatMessage,
+  ChatSession,
+  PlanResult,
+  SendChatMessageRequest,
+  SendChatMessageResponse,
   StartWorkflowRequest,
   Workflow,
   WorkflowDomain,
   WorkflowStep,
 } from '@/types';
+import { useWorkflowStore } from '@/store/workflowStore';
 
 const DEMO_USER = 'demo.user@requivo.ai';
 const latency = (ms = 350) => new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -414,6 +420,93 @@ const auditEntries: AuditEntry[] = [
   },
 ];
 
+function buildPlan(domain: WorkflowDomain): PlanResult {
+  const steps = domainSteps[domain].map(([toolName, description]) => ({
+    toolName,
+    description,
+  }));
+  return {
+    domain,
+    steps,
+    needsClarification: false,
+    clarificationQuestion: null,
+  };
+}
+
+const chatSessions: ChatSession[] = [];
+const chatMessages: Record<string, ChatMessage[]> = {};
+
+function addChatMessage(sessionId: string, msg: ChatMessage) {
+  const existing = chatMessages[sessionId] ?? [];
+  existing.push(msg);
+  chatMessages[sessionId] = existing.sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+}
+
+const thinkingMessageIds: Map<string, string> = new Map();
+
+function updateAssistantMessage(workflowId: string, updates: Partial<ChatMessage>) {
+  const msgId = thinkingMessageIds.get(workflowId);
+  if (!msgId) return;
+  for (const [sessionId, msgs] of Object.entries(chatMessages)) {
+    const idx = msgs.findIndex((m) => m.id === msgId);
+    if (idx !== -1) {
+      msgs[idx] = { ...msgs[idx], ...updates };
+      useWorkflowStore.getState().updateMessage(sessionId, msgId, updates);
+      break;
+    }
+  }
+}
+
+function seedChatSession(
+  id: string,
+  title: string,
+  minutesAgo: number,
+  userMsg: string,
+  assistantMsg: string,
+  workflowId?: string,
+) {
+  const now = Date.now();
+  const session: ChatSession = {
+    id,
+    title,
+    createdAt: new Date(now - minutesAgo * 60_000).toISOString(),
+    updatedAt: new Date(now - (minutesAgo - 1) * 60_000).toISOString(),
+    lastMessagePreview: assistantMsg,
+  };
+  chatSessions.push(session);
+
+  const userMessage: ChatMessage = {
+    id: crypto.randomUUID(),
+    sessionId: id,
+    role: 'user',
+    contentType: 'text',
+    content: userMsg,
+    workflowId: null,
+    createdAt: new Date(now - (minutesAgo - 0.5) * 60_000).toISOString(),
+  };
+  addChatMessage(id, userMessage);
+
+  const assistant: ChatMessage = {
+    id: crypto.randomUUID(),
+    sessionId: id,
+    role: 'assistant',
+    contentType: 'text',
+    content: assistantMsg,
+    workflowId: workflowId ?? null,
+    createdAt: new Date(now - (minutesAgo - 1) * 60_000).toISOString(),
+  };
+  addChatMessage(id, assistant);
+
+  if (workflowId) thinkingMessageIds.set(workflowId, assistant.id);
+}
+
+seedChatSession('demo-chat-finance', 'List all due invoices', 6, 'List all due invoices', 'I found 3 due and overdue invoices that need attention.', 'wf-demo-invoices-due');
+seedChatSession('demo-chat-procurement', 'Create a purchase order for chairs', 20, 'Create a purchase order for 50 office chairs', 'I created a purchase order plan for 50 office chairs. It needs approval.', 'wf-demo-procurement');
+seedChatSession('demo-chat-onboarding', 'Start onboarding for Jane Doe', 29, 'Start onboarding workflow for Jane Doe', 'I started the onboarding process for Jane Doe. HR approval is pending.', 'wf-demo-onboarding');
+seedChatSession('demo-chat-sales', 'Show pending sales orders', 14, 'Show pending sales orders this week', 'There are 3 pending sales orders this week.', 'wf-demo-sales-orders');
+
 const domainSteps: Record<WorkflowDomain, Array<[string, string]>> = {
   Inventory: [
     ['InventoryTool', 'Check current stock levels'],
@@ -551,16 +644,31 @@ function addAudit(workflow: Workflow, step: WorkflowStep, outcome: string) {
 
 async function runWorkflow(id: string) {
   await latency(550);
-  updateWorkflow(id, (workflow) => {
-    workflow.state = 'Planning';
+  let workflow = workflows.find((item) => item.id === id);
+  if (!workflow) return;
+
+  updateWorkflow(id, (wf) => {
+    wf.state = 'Planning';
+  });
+
+  const plan = buildPlan(workflow.domain ?? 'Reporting');
+  updateAssistantMessage(id, {
+    contentType: 'plan',
+    content: `I've analyzed your request and created a plan across **${plan.domain}** domain with ${plan.steps.length} step${plan.steps.length === 1 ? '' : 's'}.`,
+    plan,
   });
 
   await latency(800);
-  updateWorkflow(id, (workflow) => {
-    workflow.state = 'InProgress';
+  updateWorkflow(id, (wf) => {
+    wf.state = 'InProgress';
   });
 
-  const workflow = workflows.find((item) => item.id === id);
+  updateAssistantMessage(id, {
+    contentType: 'text',
+    content: `Executing plan in **${workflow.domain ?? 'Reporting'}**...`,
+  });
+
+  workflow = workflows.find((item) => item.id === id);
   if (!workflow) return;
 
   for (const step of workflow.steps) {
@@ -646,6 +754,14 @@ async function runWorkflow(id: string) {
 
   workflow.state = 'Completed';
   workflow.updatedAt = new Date().toISOString();
+
+  const completedSteps = workflow.steps.filter((s) => s.state === 'Completed').length;
+  const totalSteps = workflow.steps.length;
+  updateAssistantMessage(id, {
+    contentType: 'result',
+    content: `✅ **Workflow completed** — ${completedSteps} of ${totalSteps} step${totalSteps === 1 ? '' : 's'} executed successfully in **${workflow.domain}**.`,
+    plan,
+  });
 }
 
 async function completeApprovedWorkflow(workflowId: string) {
@@ -674,12 +790,15 @@ export const mockWorkflowApi = {
     await latency();
     const domain = inferDomain(body.userInput);
     const now = new Date().toISOString();
+    const steps = buildStepsForInput(body.userInput, domain);
+    const plan = buildPlan(domain, body.userInput);
     const workflow: Workflow = {
       id: crypto.randomUUID(),
       userInput: body.userInput,
       domain,
       state: 'Pending',
-      steps: buildStepsForInput(body.userInput, domain),
+      steps,
+      plan,
       createdAt: now,
       updatedAt: now,
     };
@@ -746,5 +865,104 @@ export const mockAuditApi = {
       ? auditEntries.filter((entry) => entry.workflowId === workflowId)
       : auditEntries;
     return clone(entries);
+  },
+};
+
+export const mockChatApi = {
+  async listSessions() {
+    await latency();
+    return clone(chatSessions);
+  },
+
+  async listMessages(sessionId: string) {
+    await latency();
+    return clone(chatMessages[sessionId] ?? []);
+  },
+
+  async sendMessage(body: SendChatMessageRequest) {
+    await latency(300);
+
+    const now = new Date().toISOString();
+    let session: ChatSession;
+
+    if (body.sessionId) {
+      session =
+        chatSessions.find((s) => s.id === body.sessionId) ??
+        (() => {
+          const s: ChatSession = {
+            id: crypto.randomUUID(),
+            title: 'New chat',
+            createdAt: now,
+            updatedAt: now,
+            lastMessagePreview: '',
+          };
+          chatSessions.unshift(s);
+          return s;
+        })();
+    } else {
+      session = {
+        id: crypto.randomUUID(),
+        title: body.content.length > 56 ? `${body.content.slice(0, 55).trimEnd()}…` : body.content,
+        createdAt: now,
+        updatedAt: now,
+        lastMessagePreview: '',
+      };
+      chatSessions.unshift(session);
+    }
+
+    const domain = inferDomain(body.content);
+    const steps = buildStepsForInput(body.content, domain);
+    const plan = buildPlan(domain, body.content);
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      sessionId: session.id,
+      role: 'user',
+      contentType: 'text',
+      content: body.content,
+      workflowId: null,
+      createdAt: now,
+    };
+    addChatMessage(session.id, userMessage);
+
+    const workflowId = crypto.randomUUID();
+    const thinkingId = crypto.randomUUID();
+    const assistantMessage: ChatMessage = {
+      id: thinkingId,
+      sessionId: session.id,
+      role: 'assistant',
+      contentType: 'thinking',
+      content: 'Analyzing your request...',
+      workflowId,
+      plan: null,
+      createdAt: now,
+    };
+    addChatMessage(session.id, assistantMessage);
+
+    thinkingMessageIds.set(workflowId, thinkingId);
+
+    const workflow: Workflow = {
+      id: workflowId,
+      userInput: body.content,
+      domain,
+      state: 'Pending',
+      steps,
+      plan,
+      createdAt: now,
+      updatedAt: now,
+    };
+    workflows.unshift(workflow);
+
+    session.updatedAt = now;
+    session.lastMessagePreview = assistantMessage.content;
+
+    void runWorkflow(workflow.id);
+
+    return {
+      session,
+      userMessage,
+      assistantMessage,
+      workflow,
+    } satisfies SendChatMessageResponse;
   },
 };

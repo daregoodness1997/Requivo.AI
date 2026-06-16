@@ -52,7 +52,7 @@ public class ChatController(
         var messages = await db.ChatMessages
             .Where(m => m.SessionId == sessionId)
             .OrderBy(m => m.CreatedAt)
-            .Select(m => new ChatMessageDto(m.Id, m.SessionId, m.Role, m.Content, m.WorkflowId, m.CreatedAt))
+            .Select(m => new ChatMessageDto(m.Id, m.SessionId, m.Role, m.ContentType, m.Content, m.WorkflowId, m.PlanData, m.CreatedAt))
             .ToListAsync(ct);
 
         return Ok(messages);
@@ -98,8 +98,9 @@ public class ChatController(
         {
             SessionId = session.Id,
             Role = "assistant",
+            ContentType = "thinking",
+            Content = "Analyzing your request...",
             WorkflowId = workflow.Id,
-            Content = $"Started workflow to process your request.",
         };
         db.ChatMessages.Add(assistantMessage);
 
@@ -108,8 +109,8 @@ public class ChatController(
 
         return Ok(new SendChatMessageResponse(
             new ChatSessionDto(session.Id, session.Title, session.CreatedAt, session.UpdatedAt, assistantMessage.Content),
-            new ChatMessageDto(userMessage.Id, userMessage.SessionId, userMessage.Role, userMessage.Content, userMessage.WorkflowId, userMessage.CreatedAt),
-            new ChatMessageDto(assistantMessage.Id, assistantMessage.SessionId, assistantMessage.Role, assistantMessage.Content, assistantMessage.WorkflowId, assistantMessage.CreatedAt),
+            new ChatMessageDto(userMessage.Id, userMessage.SessionId, userMessage.Role, userMessage.ContentType, userMessage.Content, userMessage.WorkflowId, userMessage.PlanData, userMessage.CreatedAt),
+            new ChatMessageDto(assistantMessage.Id, assistantMessage.SessionId, assistantMessage.Role, assistantMessage.ContentType, assistantMessage.Content, assistantMessage.WorkflowId, assistantMessage.PlanData, assistantMessage.CreatedAt),
             workflow
         ));
     }
@@ -126,5 +127,5 @@ public class ChatController(
 
 public record SendChatMessageRequest(Guid? SessionId, string Content);
 public record ChatSessionDto(Guid Id, string Title, DateTime CreatedAt, DateTime UpdatedAt, string LastMessagePreview);
-public record ChatMessageDto(Guid Id, Guid SessionId, string Role, string Content, Guid? WorkflowId, DateTime CreatedAt);
+public record ChatMessageDto(Guid Id, Guid SessionId, string Role, string ContentType, string Content, Guid? WorkflowId, object? Plan, DateTime CreatedAt);
 public record SendChatMessageResponse(ChatSessionDto Session, ChatMessageDto UserMessage, ChatMessageDto AssistantMessage, Workflow Workflow);

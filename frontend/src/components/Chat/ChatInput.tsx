@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { LoaderCircle, SendHorizontal } from 'lucide-react';
+import { LoaderCircle, SendHorizontal, Sparkles } from 'lucide-react';
 import Alert from '@/components/ui/Alert';
 import { Button } from '@/components/ui/button';
 import { PromptInput, PromptInputActions, PromptInputTextarea } from '@/components/ui/prompt-input';
@@ -11,48 +11,18 @@ interface Props {
   disabled?: boolean;
 }
 
-const useCaseGroups = [
-  {
-    label: 'Finance',
-    prompts: [
-      'List all due invoices',
-      'Show all overdue invoices',
-      'View invoice INV-2041 details',
-      'Pay invoice INV-2041 to Acme Corp for $4,500',
-    ],
-  },
-  {
-    label: 'Procurement',
-    prompts: [
-      'Create a purchase order for 50 office chairs',
-      'List open purchase orders awaiting approval',
-    ],
-  },
-  {
-    label: 'Inventory',
-    prompts: ['Check inventory for office chairs', 'Show low-stock SKUs in warehouse A'],
-  },
-  {
-    label: 'Sales',
-    prompts: ['Create a quote for customer ACME-442', 'Show pending sales orders this week'],
-  },
-  {
-    label: 'HR',
-    prompts: ['Start onboarding workflow for Jane Doe', 'List pending leave requests this month'],
-  },
-  {
-    label: 'Reporting',
-    prompts: [
-      'Show procurement spend by supplier for last quarter',
-      'Generate KPI summary for this month',
-    ],
-  },
-] as const;
+const suggestions = [
+  'List all due invoices',
+  'Create a purchase order for 50 office chairs',
+  'Show low-stock SKUs in warehouse A',
+  'Start onboarding workflow for Jane Doe',
+];
 
 export default function ChatInput({ onSubmit, disabled }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [value, setValue] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(true);
 
   const submit = async () => {
     const trimmed = value.trim();
@@ -64,6 +34,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
     try {
       await onSubmit(trimmed);
       setValue('');
+      setShowSuggestions(false);
     } catch (submitError) {
       setError(getErrorMessage(submitError, 'The workflow could not be started.'));
     } finally {
@@ -79,7 +50,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="ambient-line border-t border-slate-200/70 bg-white/60 p-4 backdrop-blur-sm"
+      className="border-t border-slate-200/70 bg-white/60 p-4 backdrop-blur-sm"
     >
       {error && (
         <Alert className="mb-3" role="alert" tone="danger">
@@ -87,37 +58,32 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
         </Alert>
       )}
 
-      <div className="mb-3 space-y-2">
-        <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-          Use case examples
-        </p>
-        <div className="space-y-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {useCaseGroups.map((group) => (
-            <div key={group.label} className="flex items-center gap-2">
-              <span className="min-w-[5rem] px-1 text-[11px] font-medium text-slate-500">
-                {group.label}
-              </span>
-              <div className="flex gap-2">
-                {group.prompts.map((example) => (
-                  <PromptSuggestion
-                    key={example}
-                    variant="outline"
-                    size="sm"
-                    className="h-auto shrink-0 rounded-full border-slate-200/90 bg-white/85 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50/70 hover:text-cyan-800"
-                    disabled={disabled || isSubmitting}
-                    onClick={() => {
-                      setError(null);
-                      setValue(example);
-                    }}
-                  >
-                    {example}
-                  </PromptSuggestion>
-                ))}
-              </div>
-            </div>
-          ))}
+      {showSuggestions && !value && (
+        <div className="mb-3">
+          <div className="mb-2 flex items-center gap-2 px-1">
+            <Sparkles className="size-3.5 text-slate-400" />
+            <span className="text-[11px] font-medium text-slate-500">Try asking about</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {suggestions.map((suggestion) => (
+              <PromptSuggestion
+                key={suggestion}
+                variant="outline"
+                size="sm"
+                className="h-auto shrink-0 rounded-full border-slate-200/90 bg-white/85 px-3 py-1.5 text-xs text-slate-600 transition-colors hover:border-cyan-200 hover:bg-cyan-50/70 hover:text-cyan-800"
+                disabled={disabled || isSubmitting}
+                onClick={() => {
+                  setError(null);
+                  setValue(suggestion);
+                }}
+              >
+                {suggestion}
+              </PromptSuggestion>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
       <PromptInput
         value={value}
         onValueChange={setValue}
@@ -129,7 +95,7 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
       >
         <PromptInputTextarea
           aria-label="Business request"
-          placeholder="e.g. List all due invoices and show actions"
+          placeholder="Describe a business task..."
           maxLength={2000}
           className="overflow-y-auto px-3 pt-2.5 text-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         />
@@ -149,8 +115,8 @@ export default function ChatInput({ onSubmit, disabled }: Props) {
           </Button>
         </PromptInputActions>
       </PromptInput>
-      <p className="mt-2 font-mono text-xs text-slate-400">
-        Enter to send, Shift+Enter for a new line
+      <p className="mt-2 text-center font-mono text-xs text-slate-400">
+        Enter to send &middot; Shift+Enter for new line
       </p>
     </form>
   );
