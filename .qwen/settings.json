@@ -3,7 +3,11 @@
     "allow": [
       "Bash(docker system *)",
       "Bash(findstr *)",
-      "Bash(type *)"
+      "Bash(type *)",
+      "Bash(copy *)",
+      "Bash(dotnet *)",
+      "Bash(timeout *)",
+      "Bash(netstat *)"
     ]
   },
   "$version": 4

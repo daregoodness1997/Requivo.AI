@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(docker system *)",
-      "Bash(findstr *)"
+      "Bash(findstr *)",
+      "Bash(type *)",
+      "Bash(copy *)",
+      "Bash(dotnet *)",
+      "Bash(timeout *)"
     ]
   },
   "$version": 4
