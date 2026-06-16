@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Bell, ChevronDown, LogOut, Menu } from 'lucide-react';
+import { ArrowRight, Bell, ChevronDown, LogOut, Menu, MessageSquareText } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Badge from '@/components/ui/Badge';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 import { useWorkflowStore } from '@/store/workflowStore';
-import { getWorkflowPreview, getWorkflowTitle } from '@/lib/chat';
 
-const routeTitles: Record<string, { title: string; description: string }> = {
+const routeMeta: Record<string, { title: string; description: string }> = {
   '/chat': {
-    title: 'ERP Assistant',
-    description: 'Plan and monitor business operations',
+    title: 'Chat',
+    description: '',
   },
   '/dashboard': {
     title: 'Approvals',
@@ -32,8 +31,8 @@ interface HeaderProps {
 
 export default function Header({ onOpenNavigation }: HeaderProps) {
   const pendingApprovals = useWorkflowStore((state) => state.pendingApprovals);
-  const activeWorkflowId = useWorkflowStore((state) => state.activeWorkflowId);
-  const workflows = useWorkflowStore((state) => state.workflows);
+  const sessions = useWorkflowStore((state) => state.sessions);
+  const activeSessionId = useWorkflowStore((state) => state.activeSessionId);
   const pendingCount = pendingApprovals.length;
   const { user, logout } = useAuthStore();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -42,14 +41,18 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const route = routeTitles[pathname] ?? routeTitles['/chat'];
-  const activeWorkflow = activeWorkflowId
-    ? workflows.find((workflow) => workflow.id === activeWorkflowId)
+  const meta = routeMeta[pathname] ?? routeMeta['/chat'];
+
+  const activeSession = activeSessionId
+    ? sessions.find((s) => s.id === activeSessionId)
     : null;
+
   const title =
-    pathname === '/chat' && activeWorkflow ? getWorkflowTitle(activeWorkflow) : route.title;
-  const description =
-    pathname === '/chat' && activeWorkflow ? getWorkflowPreview(activeWorkflow) : route.description;
+    pathname === '/chat'
+      ? activeSession
+        ? activeSession.title
+        : 'New chat'
+      : meta.title;
   const initials =
     user?.name
       .split(' ')
@@ -106,12 +109,15 @@ export default function Header({ onOpenNavigation }: HeaderProps) {
           </Button>
           <div className="min-w-0">
             <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">
-              Operations workspace
+              {pathname === '/chat' ? 'Conversation' : 'Operations workspace'}
             </p>
-            <h1 className="font-heading truncate text-sm font-semibold tracking-tight text-gray-950 sm:text-base">
+            <h1 className="font-heading flex items-center gap-2 truncate text-sm font-semibold tracking-tight text-gray-950 sm:text-base">
+              {pathname === '/chat' && <MessageSquareText className="size-4 shrink-0 text-slate-400" />}
               {title}
             </h1>
-            <p className="hidden truncate text-xs text-slate-500 sm:block">{description}</p>
+            {meta.description && (
+              <p className="hidden truncate text-xs text-slate-500 sm:block">{meta.description}</p>
+            )}
           </div>
         </div>
 

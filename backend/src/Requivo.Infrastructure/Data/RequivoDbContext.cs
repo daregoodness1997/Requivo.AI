@@ -64,7 +64,11 @@ public class RequivoDbContext(DbContextOptions<RequivoDbContext> options) : DbCo
         {
             e.HasKey(m => m.Id);
             e.Property(m => m.Role).IsRequired();
+            e.Property(m => m.ContentType).IsRequired().HasDefaultValue("text");
             e.Property(m => m.Content).IsRequired();
+            e.Property(m => m.PlanData)
+             .HasConversion(v => SerializeObject(v), v => DeserializeObject(v))
+             .HasColumnType("jsonb");
             e.HasIndex(m => new { m.SessionId, m.CreatedAt });
         });
 

@@ -16,6 +16,7 @@ export interface Workflow {
   domain: WorkflowDomain | null;
   state: WorkflowState;
   steps: WorkflowStep[];
+  plan?: PlanResult | null;
   failureReason?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -119,6 +120,20 @@ export interface MfaDisableRequest {
 
 export type ChatRole = 'user' | 'assistant';
 
+export type MessageContentType = 'text' | 'thinking' | 'plan' | 'result' | 'error';
+
+export interface PlannedStep {
+  toolName: string;
+  description: string;
+}
+
+export interface PlanResult {
+  domain: WorkflowDomain;
+  steps: PlannedStep[];
+  needsClarification: boolean;
+  clarificationQuestion: string | null;
+}
+
 export interface ChatSession {
   id: string;
   title: string;
@@ -131,8 +146,10 @@ export interface ChatMessage {
   id: string;
   sessionId: string;
   role: ChatRole;
+  contentType?: MessageContentType;
   content: string;
   workflowId: string | null;
+  plan?: PlanResult | null;
   createdAt: string;
 }
 

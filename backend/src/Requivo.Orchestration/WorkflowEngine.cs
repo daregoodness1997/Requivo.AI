@@ -67,6 +67,8 @@ public class WorkflowEngine(
             return;
         }
 
+        var assistantMsg = await db.ChatMessages.FirstOrDefaultAsync(m => m.WorkflowId == workflow.Id, ct);
+
         await TransitionAsync(workflow, WorkflowState.InProgress, ct);
 
         var context = new WorkflowContext
@@ -80,11 +82,22 @@ public class WorkflowEngine(
         waitingStep.StartedAt ??= DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
 
+        if (assistantMsg != null)
+        {
+            assistantMsg.ContentType = "text";
+            assistantMsg.Content = $"Resuming approval step **{waitingStep.ToolName}**...";
+        }
+
         if (!_tools.TryGetValue(waitingStep.ToolName, out var tool))
         {
             workflow.FailureReason = $"Unknown tool: {waitingStep.ToolName}";
             waitingStep.State = WorkflowState.Failed;
             waitingStep.CompletedAt = DateTime.UtcNow;
+            if (assistantMsg != null)
+            {
+                assistantMsg.ContentType = "error";
+                assistantMsg.Content = workflow.FailureReason;
+            }
             await TransitionAsync(workflow, WorkflowState.Failed, ct);
             return;
         }
@@ -109,9 +122,20 @@ public class WorkflowEngine(
         if (!result.Success)
         {
             workflow.FailureReason = result.Error;
+            if (assistantMsg != null)
+            {
+                assistantMsg.ContentType = "error";
+                assistantMsg.Content = result.Error ?? $"Step failed: {waitingStep.ToolName}";
+            }
             await db.SaveChangesAsync(ct);
             await TransitionAsync(workflow, WorkflowState.Failed, ct);
             return;
+        }
+
+        if (assistantMsg != null)
+        {
+            assistantMsg.ContentType = "result";
+            assistantMsg.Content = $"Workflow completed — all steps executed successfully in **{workflow.Domain}**.";
         }
 
         await db.SaveChangesAsync(ct);
@@ -134,9 +158,12 @@ public class WorkflowEngine(
     private async Task ExecuteAsync(Workflow wf, string userId, CancellationToken ct)
     {
         var context = new WorkflowContext { WorkflowId = wf.Id.ToString(), UserId = userId };
+        ChatMessage? assistantMsg = null;
 
         try
         {
+            assistantMsg = await db.ChatMessages.FirstOrDefaultAsync(m => m.WorkflowId == wf.Id, ct);
+
             await TransitionAsync(wf, WorkflowState.Planning, ct);
 
             // 1. Plan
@@ -145,6 +172,11 @@ public class WorkflowEngine(
             if (plan.NeedsClarification)
             {
                 wf.FailureReason = plan.ClarificationQuestion;
+                if (assistantMsg != null)
+                {
+                    assistantMsg.ContentType = "error";
+                    assistantMsg.Content = plan.ClarificationQuestion;
+                }
                 await TransitionAsync(wf, WorkflowState.Failed, ct);
                 return;
             }
@@ -157,7 +189,27 @@ public class WorkflowEngine(
                 Description = s.Description
             }).ToList();
 
+            if (assistantMsg != null)
+            {
+                assistantMsg.ContentType = "plan";
+                assistantMsg.PlanData = new
+                {
+                    domain = plan.Domain.ToString(),
+                    steps = plan.Steps.Select(s => new { s.ToolName, s.Description }),
+                    needsClarification = false,
+                    clarificationQuestion = (string?)null,
+                };
+                assistantMsg.Content = $"I've analyzed your request. Here's my plan across **{plan.Domain}** with {plan.Steps.Count} step{(plan.Steps.Count == 1 ? "" : "s")}.";
+            }
+
             await TransitionAsync(wf, WorkflowState.InProgress, ct);
+
+            if (assistantMsg != null)
+            {
+                assistantMsg.ContentType = "text";
+                assistantMsg.Content = $"Executing plan in **{wf.Domain}**...";
+            }
+            await db.SaveChangesAsync(ct);
 
             var approvalRequired = RequiresHumanApproval(wf.UserInput, wf.Domain);
             var approvalStepIndex = approvalRequired && wf.Steps.Count > 0 ? wf.Steps.Count - 1 : -1;
@@ -198,6 +250,11 @@ public class WorkflowEngine(
                     });
 
                     await db.SaveChangesAsync(ct);
+                    if (assistantMsg != null)
+                    {
+                        assistantMsg.ContentType = "text";
+                        assistantMsg.Content = $"Waiting for approval before completing **{step.ToolName}**.";
+                    }
                     await TransitionAsync(wf, WorkflowState.WaitingApproval, ct);
                     return;
                 }
@@ -241,6 +298,11 @@ public class WorkflowEngine(
                 if (!result.Success)
                 {
                     wf.FailureReason = result.Error;
+                    if (assistantMsg != null)
+                    {
+                        assistantMsg.ContentType = "error";
+                        assistantMsg.Content = result.Error ?? $"Step failed: {step.ToolName}";
+                    }
                     await TransitionAsync(wf, WorkflowState.Failed, ct);
                     return;
                 }
@@ -248,6 +310,11 @@ public class WorkflowEngine(
                 await db.SaveChangesAsync(ct);
             }
 
+            if (assistantMsg != null)
+            {
+                assistantMsg.ContentType = "result";
+                assistantMsg.Content = $"Workflow completed — all {wf.Steps.Count} step{(wf.Steps.Count == 1 ? "" : "s")} executed successfully in **{wf.Domain}**.";
+            }
             await TransitionAsync(wf, WorkflowState.Completed, ct);
             await stateStore.DeleteAsync(wf.Id.ToString(), ct);
         }
@@ -255,6 +322,11 @@ public class WorkflowEngine(
         {
             logger.LogError(ex, "Workflow {Id} failed", wf.Id);
             wf.FailureReason = ex.Message;
+            if (assistantMsg != null)
+            {
+                assistantMsg.ContentType = "error";
+                assistantMsg.Content = ex.Message;
+            }
             await TransitionAsync(wf, WorkflowState.Failed, ct);
         }
     }

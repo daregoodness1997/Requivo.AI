@@ -13,6 +13,7 @@ interface WorkflowStore {
   upsertSession: (s: ChatSession) => void;
   setMessages: (sessionId: string, messages: ChatMessage[]) => void;
   addMessages: (sessionId: string, messages: ChatMessage[]) => void;
+  updateMessage: (sessionId: string, messageId: string, updates: Partial<ChatMessage>) => void;
   upsertWorkflow: (w: Workflow) => void;
   clearChatContext: () => void;
   setActiveSession: (id: string | null) => void;
@@ -59,6 +60,18 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
           [sessionId]: [...existing, ...deduped].sort(
             (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
           ),
+        },
+      };
+    }),
+
+  updateMessage: (sessionId, messageId, updates) =>
+    set((s) => {
+      const existing = s.messagesBySession[sessionId];
+      if (!existing) return s;
+      return {
+        messagesBySession: {
+          ...s.messagesBySession,
+          [sessionId]: existing.map((m) => (m.id === messageId ? { ...m, ...updates } : m)),
         },
       };
     }),
