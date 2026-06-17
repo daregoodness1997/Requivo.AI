@@ -1,9 +1,12 @@
 import type {
+  ActiveErpConnection,
   ApprovalActionRequest,
   ApprovalRequest,
   AuditEntry,
   ChatMessage,
   ChatSession,
+  ConnectErpRequest,
+  ErpConnection,
   PlanResult,
   SendChatMessageRequest,
   SendChatMessageResponse,
@@ -964,5 +967,57 @@ export const mockChatApi = {
       assistantMessage,
       workflow,
     } satisfies SendChatMessageResponse;
+  },
+};
+
+// ── Mock Integrations ──────────────────────────────────────────
+
+const mockConnections: ErpConnection[] = [];
+
+export const mockIntegrationsApi = {
+  async list() {
+    await latency();
+    return clone(mockConnections);
+  },
+
+  async connect(body: ConnectErpRequest) {
+    await latency(400);
+    const existing = mockConnections.find((c) => c.providerId === body.providerId);
+    if (existing) {
+      existing.isConnected = true;
+      existing.connectedAt = new Date().toISOString();
+      return clone(existing);
+    }
+    const connection: ErpConnection = {
+      id: crypto.randomUUID(),
+      providerId: body.providerId,
+      providerName: body.providerName,
+      isConnected: true,
+      connectedAt: new Date().toISOString(),
+    };
+    mockConnections.push(connection);
+    return clone(connection);
+  },
+
+  async disconnect(connectionId: string) {
+    await latency(300);
+    const idx = mockConnections.findIndex((c) => c.id === connectionId);
+    if (idx !== -1) {
+      mockConnections[idx].isConnected = false;
+    }
+  },
+
+  async getActive(): Promise<ActiveErpConnection[]> {
+    await latency();
+    return clone(
+      mockConnections
+        .filter((c) => c.isConnected)
+        .map((c) => ({
+          providerId: c.providerId,
+          providerName: c.providerName,
+          baseUrl: null,
+          connectedAt: c.connectedAt,
+        })),
+    );
   },
 };

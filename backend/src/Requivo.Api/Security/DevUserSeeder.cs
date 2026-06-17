@@ -34,8 +34,8 @@ public static class DevUserSeeder
                 continue;
             }
 
+            // Only update role/TOTP — never overwrite an existing password hash
             existing.Role = seed.Role;
-            existing.PasswordHash = Requivo.Api.Controllers.PasswordHasher.Hash(DefaultPassword);
             existing.TotpSecret = seed.TotpSecret;
             existing.MfaEnabled = true;
         }

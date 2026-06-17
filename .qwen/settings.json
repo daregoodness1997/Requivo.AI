@@ -7,7 +7,14 @@
       "Bash(copy *)",
       "Bash(dotnet *)",
       "Bash(timeout *)",
-      "Bash(netstat *)"
+      "Bash(netstat *)",
+      "Bash(docker login *)",
+      "Bash(docker info)",
+      "Bash(docker pull *)",
+      "Bash(cat *)",
+      "Bash(docker build *)",
+      "Bash(docker push *)",
+      "Bash(open *)"
     ]
   },
   "$version": 4

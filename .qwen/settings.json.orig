@@ -6,7 +6,14 @@
       "Bash(type *)",
       "Bash(copy *)",
       "Bash(dotnet *)",
-      "Bash(timeout *)"
+      "Bash(timeout *)",
+      "Bash(netstat *)",
+      "Bash(docker login *)",
+      "Bash(docker info)",
+      "Bash(docker pull *)",
+      "Bash(cat *)",
+      "Bash(docker build *)",
+      "Bash(docker push *)"
     ]
   },
   "$version": 4

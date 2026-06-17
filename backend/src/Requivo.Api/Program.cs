@@ -48,6 +48,7 @@ builder.Services.AddScoped<IApprovalService, HitlService>();
 builder.Services.AddScoped<IEmailService, SendGridEmailService>();
 builder.Services.AddScoped<ISlackService, SlackService>();
 builder.Services.AddScoped<IProcurementGateway, ErpProcurementGateway>();
+builder.Services.AddScoped<IErpConnectionManager, ErpConnectionManager>();
 
 // ── Auth (JWT) ─────────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -154,7 +155,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // ── Auto-migrate and seed test users on startup ───────────────
-var seedTestUsers = cfg.GetValue("Auth:SeedTestUsers", true);
+var seedTestUsers = cfg.GetValue("Auth:SeedTestUsers", false);
 if (seedTestUsers || app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();

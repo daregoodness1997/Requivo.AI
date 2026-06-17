@@ -14,6 +14,7 @@ public class WorkflowEngine(
     IEnumerable<ITool> tools,
     IStateStore stateStore,
     IApprovalService approvals,
+    IErpConnectionManager erpConnections,
     RequivoDbContext db,
     ILogger<WorkflowEngine> logger,
     IServiceScopeFactory scopeFactory) : IWorkflowEngine
@@ -295,7 +296,13 @@ public class WorkflowEngine(
 
     private async Task ExecuteAsync(Workflow wf, string userId, CancellationToken ct)
     {
-        var context = new WorkflowContext { WorkflowId = wf.Id.ToString(), UserId = userId };
+        var userConnections = await erpConnections.GetActiveConnectionsAsync(userId, ct);
+        var context = new WorkflowContext
+        {
+            WorkflowId = wf.Id.ToString(),
+            UserId = userId,
+            ErpConnections = userConnections,
+        };
         ChatMessage? assistantMsg = null;
         Requivo.AI.PlanResult? plan = null;
         var isResume = wf.State is WorkflowState.WaitingInput or WorkflowState.WaitingApproval;

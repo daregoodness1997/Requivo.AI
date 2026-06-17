@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Network } from 'lucide-react';
 import ChatWindow from '@/components/Chat/ChatWindow';
 import ChatInput from '@/components/Chat/ChatInput';
 import Alert from '@/components/ui/Alert';
+import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
 import { useWorkflow } from '@/hooks/useWorkflow';
 import { useSSE } from '@/hooks/useSSE';
 import { useWorkflowStore } from '@/store/workflowStore';
 import { workflowApi } from '@/api/workflow';
 import { chatApi } from '@/api/chat';
+import { integrationsApi } from '@/api/integrations';
 import { getErrorMessage } from '@/lib/errors';
+import type { ActiveErpConnection } from '@/types';
 
 export default function ChatPage() {
   const { startWorkflow } = useWorkflow();
@@ -28,6 +32,7 @@ export default function ChatPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [didAutoSelectSession, setDidAutoSelectSession] = useState(false);
+  const [activeConnections, setActiveConnections] = useState<ActiveErpConnection[]>([]);
 
   useSSE(activeWorkflowId, activeSessionId);
 
@@ -51,6 +56,31 @@ export default function ChatPage() {
       active = false;
     };
   }, [setWorkflows]);
+
+  useEffect(() => {
+    let active = true;
+
+    integrationsApi
+      .getActive()
+      .then((connections) => {
+        if (active) setActiveConnections(connections);
+      })
+      .catch(() => undefined);
+
+    const interval = window.setInterval(() => {
+      integrationsApi
+        .getActive()
+        .then((connections) => {
+          if (active) setActiveConnections(connections);
+        })
+        .catch(() => undefined);
+    }, 30_000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     if (!didAutoSelectSession && !activeSessionId && sessions.length > 0) {
@@ -98,6 +128,20 @@ export default function ChatPage() {
 
   return (
     <div className="page-shell fade-up-delay flex h-[calc(100vh-6.1rem)] min-h-[34rem] flex-col overflow-hidden">
+      {activeConnections.length > 0 && (
+        <div className="flex shrink-0 items-center gap-2 border-b border-brand-100 bg-brand-50/60 px-4 py-1.5 text-xs text-brand-700">
+          <Network className="size-3.5" />
+          <span className="font-medium">Connected:</span>
+          <div className="flex gap-1.5">
+            {activeConnections.map((c) => (
+              <Badge key={c.providerId} tone="info">
+                {c.providerName}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loadError && (
         <Alert className="m-4 mb-0" role="alert" tone="danger">
           {loadError}

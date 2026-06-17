@@ -3,6 +3,7 @@ import {
   ClipboardCheck,
   FileClock,
   MessageSquareText,
+  Network,
   Plus,
   Settings,
   Sparkles,
@@ -17,6 +18,7 @@ const links = [
   { to: '/chat', label: 'Chat', icon: MessageSquareText },
   { to: '/dashboard', label: 'Approvals', icon: ClipboardCheck },
   { to: '/audit', label: 'Audit Log', icon: FileClock },
+  { to: '/integrations', label: 'Integrations', icon: Network },
   { to: '/profile', label: 'Profile', icon: Settings },
 ];
 

@@ -174,3 +174,27 @@ export interface SendChatMessageResponse {
   assistantMessage: ChatMessage | null;
   workflow: Workflow;
 }
+
+export interface ErpConnection {
+  id: string;
+  providerId: string;
+  providerName: string;
+  isConnected: boolean;
+  connectedAt: string;
+}
+
+export interface ConnectErpRequest {
+  providerId: string;
+  providerName: string;
+  apiKey?: string;
+  bearerToken?: string;
+  baseUrl?: string;
+  extraConfig?: string;
+}
+
+export interface ActiveErpConnection {
+  providerId: string;
+  providerName: string;
+  baseUrl: string | null;
+  connectedAt: string;
+}

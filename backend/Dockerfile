@@ -20,8 +20,7 @@ COPY tests/ tests/
 
 RUN dotnet publish src/Requivo.Api/Requivo.Api.csproj \
     -c Release \
-    -o /app \
-    --no-restore
+    -o /app
 
 # ---- Runtime ----
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime

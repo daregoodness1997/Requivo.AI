@@ -9,4 +9,5 @@ public class WorkflowContext
     public List<string> Permissions { get; set; } = [];
     public int  StepIndex     { get; set; }
     public List<AuditEntry> AuditTrail { get; set; } = [];
+    public List<ErpConnection> ErpConnections { get; set; } = [];
 }

@@ -18,6 +18,7 @@ public class RequivoDbContext(DbContextOptions<RequivoDbContext> options) : DbCo
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<ErpConnection> ErpConnections => Set<ErpConnection>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -70,6 +71,12 @@ public class RequivoDbContext(DbContextOptions<RequivoDbContext> options) : DbCo
              .HasConversion(v => SerializeObject(v), v => DeserializeObject(v))
              .HasColumnType("jsonb");
             e.HasIndex(m => new { m.SessionId, m.CreatedAt });
+        });
+
+        mb.Entity<ErpConnection>(e =>
+        {
+            e.HasKey(c => c.Id);
+            e.HasIndex(c => new { c.UserId, c.ProviderId }).IsUnique();
         });
 
         mb.Entity<AuditEntry>(e =>
