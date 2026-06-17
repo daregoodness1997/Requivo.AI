@@ -5,6 +5,7 @@ import { Check, Circle, Clock3, LoaderCircle, SendHorizontal, Sparkles, X } from
 import Badge from '@/components/ui/Badge';
 import EmptyState from '@/components/ui/EmptyState';
 import Alert from '@/components/ui/Alert';
+import PurchaseOrderForm from './PurchaseOrderForm';
 import { Message, MessageAvatar, MessageContent } from '@/components/ui/message';
 import {
   ChatContainerContent,
@@ -175,7 +176,7 @@ function ErrorBubble({ content }: { content: string }) {
   );
 }
 
-function PromptBubble({ data, onRespond, sessionId }: { data: Record<string, unknown> & { question: string; options?: string[]; stepToolName?: string; stepDescription?: string }; onRespond?: Props['onRespond']; sessionId: string }) {
+function PromptBubble({ data, onRespond, sessionId }: { data: Record<string, unknown> & { question: string; options?: string[]; stepToolName?: string; stepDescription?: string; formType?: string }; onRespond?: Props['onRespond']; sessionId: string }) {
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -192,6 +193,10 @@ function PromptBubble({ data, onRespond, sessionId }: { data: Record<string, unk
       inputRef.current?.focus();
     }
   };
+
+  if (data.formType === 'purchase_order') {
+    return <PurchaseOrderForm onSubmit={send} isSending={isSending} />;
+  }
 
   return (
     <div className="space-y-3">

@@ -336,6 +336,7 @@ public class WorkflowEngine(
                         promptType = "clarification",
                         question = plan.ClarificationQuestion ?? "Could you provide more details?",
                         options = Array.Empty<string>(),
+                        formType = plan.FormType,
                     };
                     assistantMsg.Content = plan.ClarificationQuestion ?? "Could you provide more details?";
                 }
@@ -360,6 +361,7 @@ public class WorkflowEngine(
                     steps = plan.Steps.Select(s => new { s.ToolName, s.Description }),
                     needsClarification = false,
                     clarificationQuestion = (string?)null,
+                    formType = (string?)null,
                 };
                 assistantMsg.Content = $"I've analyzed your request. Here's my plan across **{plan.Domain}** with {plan.Steps.Count} step{(plan.Steps.Count == 1 ? "" : "s")}.";
             }

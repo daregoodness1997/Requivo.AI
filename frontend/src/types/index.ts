@@ -148,6 +148,7 @@ export interface PromptData {
   options?: string[];
   stepToolName?: string;
   stepDescription?: string;
+  formType?: string;
 }
 
 export interface ChatMessage {

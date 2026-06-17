@@ -6,7 +6,7 @@ using Requivo.Core.Models;
 
 namespace Requivo.AI;
 
-public record PlanResult(WorkflowDomain Domain, List<PlannedStep> Steps, bool NeedsClarification, string? ClarificationQuestion);
+public record PlanResult(WorkflowDomain Domain, List<PlannedStep> Steps, bool NeedsClarification, string? ClarificationQuestion, string? FormType = null);
 public record PlannedStep(string ToolName, string Description, object? Input);
 
 public interface IPromptOrchestrator
@@ -83,8 +83,9 @@ public class PromptOrchestrator(
                                   s.GetProperty("description").GetString()!,
                                   s.TryGetProperty("input", out var inp) ? inp : (object?)null))
                               .ToList();
+            var formType = doc.TryGetProperty("formType", out var ft) ? ft.GetString() : null;
 
-            return new PlanResult(domain, steps, needsQ, clarQ);
+            return new PlanResult(domain, steps, needsQ, clarQ, formType);
         }
         catch (Exception ex)
         {
@@ -113,7 +114,8 @@ public class PromptOrchestrator(
                 WorkflowDomain.Procurement,
                 Steps: [],
                 NeedsClarification: true,
-                ClarificationQuestion: "To create a purchase order, provide supplier ID, line items (SKU, quantity, unit price), and optional currency/cost center.");
+                ClarificationQuestion: "To create a purchase order, provide supplier ID, line items (SKU, quantity, unit price), and optional currency/cost center.",
+                FormType: "purchase_order");
         }
 
         if (ContainsAny(lower, "inventory", "stock", "warehouse", "sku", "restock"))
