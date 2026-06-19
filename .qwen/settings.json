@@ -17,7 +17,8 @@
       "Bash(open *)",
       "Agent(Explore)",
       "Bash(npm run *)",
-      "Bash(docker *)"
+      "Bash(docker *)",
+      "Bash(curl *)"
     ]
   },
   "$version": 4

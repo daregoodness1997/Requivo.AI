@@ -136,10 +136,12 @@ builder.Services.AddSwaggerGen(c =>
 
 // ── CORS ───────────────────────────────────────────────────────
 var corsRaw = cfg["Cors:AllowedOrigins"];
+Console.WriteLine($"[CORS] Raw config value: '{corsRaw}'");
 var allowedCorsOrigins = !string.IsNullOrWhiteSpace(corsRaw)
     ? corsRaw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
     : cfg.GetSection("Cors:AllowedOrigins").Get<string[]>()
       ?? new[] { "http://localhost:5173" };
+Console.WriteLine($"[CORS] Allowed origins: {string.Join(", ", allowedCorsOrigins)}");
 
 builder.Services.AddCors(opt => opt.AddDefaultPolicy(p =>
     p.WithOrigins(allowedCorsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
@@ -157,8 +159,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.UseCors();
 app.UseRouting();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
