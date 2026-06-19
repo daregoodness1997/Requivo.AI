@@ -135,8 +135,11 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ── CORS ───────────────────────────────────────────────────────
-var allowedCorsOrigins = cfg.GetSection("Cors:AllowedOrigins").Get<string[]>()
-    ?? new[] { "http://localhost:5173" };
+var corsRaw = cfg["Cors:AllowedOrigins"];
+var allowedCorsOrigins = !string.IsNullOrWhiteSpace(corsRaw)
+    ? corsRaw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    : cfg.GetSection("Cors:AllowedOrigins").Get<string[]>()
+      ?? new[] { "http://localhost:5173" };
 
 builder.Services.AddCors(opt => opt.AddDefaultPolicy(p =>
     p.WithOrigins(allowedCorsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
