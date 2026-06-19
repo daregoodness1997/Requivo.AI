@@ -21,7 +21,7 @@ export function useWorkflow() {
       });
 
       upsertSession(response.session);
-      addMessages(response.session.id, [response.userMessage, response.assistantMessage]);
+      addMessages(response.session.id, [response.userMessage, response.assistantMessage].filter((m): m is NonNullable<typeof m> => m != null));
       upsertWorkflow(response.workflow);
       setActiveSession(response.session.id);
       setActiveWorkflow(response.workflow.id);

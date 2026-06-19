@@ -5,6 +5,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import AuditPage from '@/pages/AuditPage';
 import ChatPage from '@/pages/ChatPage';
 import DashboardPage from '@/pages/DashboardPage';
+import IntegrationsPage from '@/pages/IntegrationsPage';
 import LoginPage from '@/pages/LoginPage';
 import ProfilePage from '@/pages/ProfilePage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -35,6 +36,14 @@ function WorkspaceRoutes() {
           element={
             <ProtectedRoute allowedRoles={['Auditor', 'Admin']}>
               <AuditPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/integrations"
+          element={
+            <ProtectedRoute>
+              <IntegrationsPage />
             </ProtectedRoute>
           }
         />

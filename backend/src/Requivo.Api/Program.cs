@@ -8,6 +8,7 @@ using Requivo.Core.Interfaces;
 using Requivo.Infrastructure.Cache;
 using Requivo.Infrastructure.Data;
 using Requivo.Infrastructure.Integrations;
+using Requivo.Infrastructure.Security;
 using Requivo.Orchestration;
 using Requivo.Tools;
 using Requivo.Api.Security;
@@ -18,6 +19,9 @@ EnvFileLoader.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 var cfg = builder.Configuration;
+
+// ── Data Protection ──────────────────────────────────────────
+builder.Services.AddDataProtection();
 
 // ── Database ───────────────────────────────────────────────────
 builder.Services.AddDbContext<RequivoDbContext>(opt =>
@@ -48,6 +52,9 @@ builder.Services.AddScoped<IApprovalService, HitlService>();
 builder.Services.AddScoped<IEmailService, SendGridEmailService>();
 builder.Services.AddScoped<ISlackService, SlackService>();
 builder.Services.AddScoped<IProcurementGateway, ErpProcurementGateway>();
+builder.Services.AddScoped<IErpConnectionManager, ErpConnectionManager>();
+builder.Services.AddSingleton<ICredentialProtector, CredentialProtector>();
+builder.Services.AddSingleton<IProviderCredentialRegistry, ProviderCredentialRegistry>();
 
 // ── Auth (JWT) ─────────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -131,7 +138,7 @@ builder.Services.AddSwaggerGen(c =>
 var allowedCorsOrigins = cfg.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:5173" };
 
-builder.Services.AddCors(opt => opt.AddPolicy("Frontend", p =>
+builder.Services.AddCors(opt => opt.AddDefaultPolicy(p =>
     p.WithOrigins(allowedCorsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 var app = builder.Build();
@@ -142,19 +149,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("Frontend");
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
 
+app.UseCors();
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
 // ── Auto-migrate and seed test users on startup ───────────────
-var seedTestUsers = cfg.GetValue("Auth:SeedTestUsers", true);
+var seedTestUsers = cfg.GetValue("Auth:SeedTestUsers", false);
 if (seedTestUsers || app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();

@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Requivo.Api.Security;
+using Requivo.Core.Enums;
 using Requivo.Core.Interfaces;
 using Requivo.Core.Models;
 using Requivo.Infrastructure.Data;
+using Requivo.Orchestration;
 
 namespace Requivo.Api.Controllers;
 
@@ -13,7 +15,9 @@ namespace Requivo.Api.Controllers;
 [Authorize]
 public class ChatController(
     RequivoDbContext db,
-    IWorkflowEngine engine) : ControllerBase
+    IWorkflowEngine engine,
+    IServiceScopeFactory scopeFactory,
+    ILogger<ChatController> logger) : ControllerBase
 {
     [HttpGet("sessions")]
     [Authorize(Policy = AuthorizationPolicies.WorkflowRead)]
@@ -84,6 +88,7 @@ public class ChatController(
                       ?? throw new KeyNotFoundException("Chat session not found.");
         }
 
+        // Save user message early so it's visible regardless of the path
         var userMessage = new ChatMessage
         {
             SessionId = session.Id,
@@ -92,7 +97,38 @@ public class ChatController(
         };
         db.ChatMessages.Add(userMessage);
 
-        var workflow = await engine.StartAsync(req.Content.Trim(), userId, ct);
+        // Check if the session has a workflow waiting for user input
+        var waitingWorkflowId = await db.ChatMessages
+            .Where(m => m.SessionId == session.Id && m.WorkflowId != null)
+            .OrderByDescending(m => m.CreatedAt)
+            .Select(m => m.WorkflowId)
+            .FirstOrDefaultAsync(ct);
+
+        if (waitingWorkflowId.HasValue)
+        {
+            var wf = await db.Workflows.FindAsync([waitingWorkflowId.Value], ct);
+            if (wf?.State == WorkflowState.WaitingInput)
+            {
+                session.UpdatedAt = DateTime.UtcNow;
+                await db.SaveChangesAsync(ct);
+
+                await engine.SubmitInputAsync(wf.Id, req.Content.Trim(), userId, ct);
+
+                return Ok(new
+                {
+                    session = new ChatSessionDto(session.Id, session.Title, session.CreatedAt, session.UpdatedAt, userMessage.Content),
+                    userMessage = new ChatMessageDto(userMessage.Id, userMessage.SessionId, userMessage.Role, userMessage.ContentType, userMessage.Content, userMessage.WorkflowId, userMessage.PlanData, userMessage.CreatedAt),
+                    assistantMessage = (object?)null,
+                    workflow = wf,
+                });
+            }
+        }
+
+        // Normal flow: create workflow, persist messages, then start background execution
+        // (messages must be saved before background execution queries them)
+        var workflow = new Workflow { UserInput = req.Content.Trim() };
+        db.Workflows.Add(workflow);
+        await db.SaveChangesAsync(ct);
 
         var assistantMessage = new ChatMessage
         {
@@ -103,9 +139,25 @@ public class ChatController(
             WorkflowId = workflow.Id,
         };
         db.ChatMessages.Add(assistantMessage);
-
         session.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync(ct);
+
+        // Start background execution after messages are persisted
+        var capturedWorkflowId = workflow.Id;
+        var capturedUserId = userId;
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                var scopedEngine = scope.ServiceProvider.GetRequiredService<WorkflowEngine>();
+                await scopedEngine.ExecuteWorkflowAsync(capturedWorkflowId, capturedUserId, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Background execution failed for workflow {Id}", capturedWorkflowId);
+            }
+        });
 
         return Ok(new SendChatMessageResponse(
             new ChatSessionDto(session.Id, session.Title, session.CreatedAt, session.UpdatedAt, assistantMessage.Content),

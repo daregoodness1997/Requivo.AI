@@ -1,9 +1,12 @@
 import type {
+  ActiveErpConnection,
   ApprovalActionRequest,
   ApprovalRequest,
   AuditEntry,
   ChatMessage,
   ChatSession,
+  ConnectErpRequest,
+  ErpConnection,
   PlanResult,
   SendChatMessageRequest,
   SendChatMessageResponse,
@@ -502,10 +505,38 @@ function seedChatSession(
   if (workflowId) thinkingMessageIds.set(workflowId, assistant.id);
 }
 
-seedChatSession('demo-chat-finance', 'List all due invoices', 6, 'List all due invoices', 'I found 3 due and overdue invoices that need attention.', 'wf-demo-invoices-due');
-seedChatSession('demo-chat-procurement', 'Create a purchase order for chairs', 20, 'Create a purchase order for 50 office chairs', 'I created a purchase order plan for 50 office chairs. It needs approval.', 'wf-demo-procurement');
-seedChatSession('demo-chat-onboarding', 'Start onboarding for Jane Doe', 29, 'Start onboarding workflow for Jane Doe', 'I started the onboarding process for Jane Doe. HR approval is pending.', 'wf-demo-onboarding');
-seedChatSession('demo-chat-sales', 'Show pending sales orders', 14, 'Show pending sales orders this week', 'There are 3 pending sales orders this week.', 'wf-demo-sales-orders');
+seedChatSession(
+  'demo-chat-finance',
+  'List all due invoices',
+  6,
+  'List all due invoices',
+  'I found 3 due and overdue invoices that need attention.',
+  'wf-demo-invoices-due',
+);
+seedChatSession(
+  'demo-chat-procurement',
+  'Create a purchase order for chairs',
+  20,
+  'Create a purchase order for 50 office chairs',
+  'I created a purchase order plan for 50 office chairs. It needs approval.',
+  'wf-demo-procurement',
+);
+seedChatSession(
+  'demo-chat-onboarding',
+  'Start onboarding for Jane Doe',
+  29,
+  'Start onboarding workflow for Jane Doe',
+  'I started the onboarding process for Jane Doe. HR approval is pending.',
+  'wf-demo-onboarding',
+);
+seedChatSession(
+  'demo-chat-sales',
+  'Show pending sales orders',
+  14,
+  'Show pending sales orders this week',
+  'There are 3 pending sales orders this week.',
+  'wf-demo-sales-orders',
+);
 
 const domainSteps: Record<WorkflowDomain, Array<[string, string]>> = {
   Inventory: [
@@ -791,7 +822,7 @@ export const mockWorkflowApi = {
     const domain = inferDomain(body.userInput);
     const now = new Date().toISOString();
     const steps = buildStepsForInput(body.userInput, domain);
-    const plan = buildPlan(domain, body.userInput);
+    const plan = buildPlan(domain);
     const workflow: Workflow = {
       id: crypto.randomUUID(),
       userInput: body.userInput,
@@ -912,7 +943,7 @@ export const mockChatApi = {
 
     const domain = inferDomain(body.content);
     const steps = buildStepsForInput(body.content, domain);
-    const plan = buildPlan(domain, body.content);
+    const plan = buildPlan(domain);
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -964,5 +995,59 @@ export const mockChatApi = {
       assistantMessage,
       workflow,
     } satisfies SendChatMessageResponse;
+  },
+};
+
+// ── Mock Integrations ──────────────────────────────────────────
+
+const mockConnections: ErpConnection[] = [];
+
+export const mockIntegrationsApi = {
+  async list() {
+    await latency();
+    return clone(mockConnections);
+  },
+
+  async connect(body: ConnectErpRequest) {
+    await latency(400);
+    const existing = mockConnections.find((c) => c.providerId === body.providerId);
+    if (existing) {
+      existing.isConnected = true;
+      existing.baseUrl = body.baseUrl ?? existing.baseUrl;
+      existing.connectedAt = new Date().toISOString();
+      return clone(existing);
+    }
+    const connection: ErpConnection = {
+      id: crypto.randomUUID(),
+      providerId: body.providerId,
+      providerName: body.providerName,
+      isConnected: true,
+      baseUrl: body.baseUrl ?? null,
+      connectedAt: new Date().toISOString(),
+    };
+    mockConnections.push(connection);
+    return clone(connection);
+  },
+
+  async disconnect(connectionId: string) {
+    await latency(300);
+    const idx = mockConnections.findIndex((c) => c.id === connectionId);
+    if (idx !== -1) {
+      mockConnections[idx].isConnected = false;
+    }
+  },
+
+  async getActive(): Promise<ActiveErpConnection[]> {
+    await latency();
+    return clone(
+      mockConnections
+        .filter((c) => c.isConnected)
+        .map((c) => ({
+          providerId: c.providerId,
+          providerName: c.providerName,
+          baseUrl: null,
+          connectedAt: c.connectedAt,
+        })),
+    );
   },
 };
