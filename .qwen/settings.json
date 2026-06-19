@@ -14,7 +14,10 @@
       "Bash(cat *)",
       "Bash(docker build *)",
       "Bash(docker push *)",
-      "Bash(open *)"
+      "Bash(open *)",
+      "Agent(Explore)",
+      "Bash(npm run *)",
+      "Bash(docker *)"
     ]
   },
   "$version": 4

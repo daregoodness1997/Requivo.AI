@@ -1,95 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Building2,
-  BookOpen,
-  Mail,
-  Globe,
-  Database,
-  Cloud,
-  Receipt,
-  Blocks,
-  Link2,
-  Unlink,
-  CheckCircle2,
-  XCircle,
-  RefreshCw,
-  LoaderCircle,
-} from 'lucide-react';
+import { Link2, Unlink, CheckCircle2, XCircle, RefreshCw, LoaderCircle } from 'lucide-react';
 import Alert from '@/components/ui/Alert';
 import Badge from '@/components/ui/Badge';
 import { Button } from '@/components/ui/button';
 import Card from '@/components/ui/Card';
 import Spinner from '@/components/ui/Spinner';
+import ConnectDialog, { providers } from '@/components/Integrations/ConnectDialog';
+import type { ErpProvider } from '@/components/Integrations/ConnectDialog';
 import { integrationsApi } from '@/api/integrations';
 import { getErrorMessage } from '@/lib/errors';
 import type { ErpConnection } from '@/types';
-
-interface ErpProvider {
-  id: string;
-  name: string;
-  description: string;
-  icon: typeof Building2;
-  color: string;
-}
-
-const providers: ErpProvider[] = [
-  {
-    id: 'sap',
-    name: 'SAP S/4HANA',
-    description: 'Connect to SAP S/4HANA for procurement, finance, and inventory management.',
-    icon: Building2,
-    color: 'text-blue-600',
-  },
-  {
-    id: 'quickbooks',
-    name: 'QuickBooks',
-    description: 'Sync invoices, expenses, and financial data with QuickBooks Online.',
-    icon: BookOpen,
-    color: 'text-green-600',
-  },
-  {
-    id: 'zoho',
-    name: 'Zoho Mail',
-    description: 'Integrate email workflows and calendar events from Zoho Mail.',
-    icon: Mail,
-    color: 'text-orange-500',
-  },
-  {
-    id: 'netsuite',
-    name: 'Oracle NetSuite',
-    description: 'Manage ERP, CRM, and e-commerce operations through NetSuite.',
-    icon: Globe,
-    color: 'text-red-500',
-  },
-  {
-    id: 'dynamics',
-    name: 'Microsoft Dynamics 365',
-    description: 'Integrate sales, customer service, and finance operations.',
-    icon: Database,
-    color: 'text-indigo-600',
-  },
-  {
-    id: 'salesforce',
-    name: 'Salesforce',
-    description: 'Sync CRM data, sales pipelines, and customer analytics.',
-    icon: Cloud,
-    color: 'text-sky-500',
-  },
-  {
-    id: 'xero',
-    name: 'Xero',
-    description: 'Connect accounting, billing, and bank reconciliation data.',
-    icon: Receipt,
-    color: 'text-teal-600',
-  },
-  {
-    id: 'odoo',
-    name: 'Odoo',
-    description: 'Integrate open-source ERP modules including CRM, sales, and inventory.',
-    icon: Blocks,
-    color: 'text-purple-600',
-  },
-];
 
 export default function IntegrationsPage() {
   const [connections, setConnections] = useState<Map<string, ErpConnection>>(new Map());
@@ -97,6 +17,8 @@ export default function IntegrationsPage() {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [dialogProvider, setDialogProvider] = useState<ErpProvider | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const mounted = useRef(true);
 
   const loadConnections = useCallback(async () => {
@@ -117,27 +39,28 @@ export default function IntegrationsPage() {
   useEffect(() => {
     mounted.current = true;
     loadConnections();
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, [loadConnections]);
 
-  const connect = useCallback(async (provider: ErpProvider) => {
+  const openConnectDialog = useCallback((provider: ErpProvider) => {
     setError(null);
     setSuccess(null);
-    setLoadingId(provider.id);
-    try {
-      const result = await integrationsApi.connect({
-        providerId: provider.id,
-        providerName: provider.name,
-      });
-      if (mounted.current) {
-        setConnections((prev) => new Map(prev).set(result.providerId, result));
-        setSuccess(`Connected to ${provider.name}.`);
-      }
-    } catch (err) {
-      if (mounted.current) setError(getErrorMessage(err, `Failed to connect to ${provider.name}.`));
-    } finally {
-      if (mounted.current) setLoadingId(null);
-    }
+    setDialogProvider(provider);
+    setDialogOpen(true);
+  }, []);
+
+  const closeDialog = useCallback(() => {
+    setDialogOpen(false);
+    setDialogProvider(null);
+  }, []);
+
+  const onConnected = useCallback((connection: ErpConnection) => {
+    setConnections((prev) => new Map(prev).set(connection.providerId, connection));
+    setSuccess(
+      `Connected to ${providers.find((p) => p.id === connection.providerId)?.name ?? connection.providerId}.`,
+    );
   }, []);
 
   const disconnect = useCallback(async (provider: ErpProvider, connection: ErpConnection) => {
@@ -155,7 +78,8 @@ export default function IntegrationsPage() {
         setSuccess(`Disconnected from ${provider.name}.`);
       }
     } catch (err) {
-      if (mounted.current) setError(getErrorMessage(err, `Failed to disconnect from ${provider.name}.`));
+      if (mounted.current)
+        setError(getErrorMessage(err, `Failed to disconnect from ${provider.name}.`));
     } finally {
       if (mounted.current) setLoadingId(null);
     }
@@ -243,25 +167,17 @@ export default function IntegrationsPage() {
                     onClick={() => connection && disconnect(provider, connection)}
                     disabled={isLoading || !connection}
                   >
-                    {isLoading ? (
-                      <Spinner className="size-3.5" />
-                    ) : (
-                      <Unlink className="size-3.5" />
-                    )}
+                    {isLoading ? <Spinner className="size-3.5" /> : <Unlink className="size-3.5" />}
                     Disconnect
                   </Button>
                 ) : (
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => connect(provider)}
+                    onClick={() => openConnectDialog(provider)}
                     disabled={isLoading}
                   >
-                    {isLoading ? (
-                      <Spinner className="size-3.5" />
-                    ) : (
-                      <Link2 className="size-3.5" />
-                    )}
+                    {isLoading ? <Spinner className="size-3.5" /> : <Link2 className="size-3.5" />}
                     Connect
                   </Button>
                 )}
@@ -283,6 +199,13 @@ export default function IntegrationsPage() {
           </div>
         </div>
       </Card>
+
+      <ConnectDialog
+        provider={dialogProvider}
+        open={dialogOpen}
+        onClose={closeDialog}
+        onConnected={onConnected}
+      />
     </div>
   );
 }

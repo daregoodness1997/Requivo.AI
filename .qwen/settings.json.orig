@@ -13,7 +13,10 @@
       "Bash(docker pull *)",
       "Bash(cat *)",
       "Bash(docker build *)",
-      "Bash(docker push *)"
+      "Bash(docker push *)",
+      "Bash(open *)",
+      "Agent(Explore)",
+      "Bash(npm run *)"
     ]
   },
   "$version": 4

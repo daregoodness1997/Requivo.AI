@@ -505,10 +505,38 @@ function seedChatSession(
   if (workflowId) thinkingMessageIds.set(workflowId, assistant.id);
 }
 
-seedChatSession('demo-chat-finance', 'List all due invoices', 6, 'List all due invoices', 'I found 3 due and overdue invoices that need attention.', 'wf-demo-invoices-due');
-seedChatSession('demo-chat-procurement', 'Create a purchase order for chairs', 20, 'Create a purchase order for 50 office chairs', 'I created a purchase order plan for 50 office chairs. It needs approval.', 'wf-demo-procurement');
-seedChatSession('demo-chat-onboarding', 'Start onboarding for Jane Doe', 29, 'Start onboarding workflow for Jane Doe', 'I started the onboarding process for Jane Doe. HR approval is pending.', 'wf-demo-onboarding');
-seedChatSession('demo-chat-sales', 'Show pending sales orders', 14, 'Show pending sales orders this week', 'There are 3 pending sales orders this week.', 'wf-demo-sales-orders');
+seedChatSession(
+  'demo-chat-finance',
+  'List all due invoices',
+  6,
+  'List all due invoices',
+  'I found 3 due and overdue invoices that need attention.',
+  'wf-demo-invoices-due',
+);
+seedChatSession(
+  'demo-chat-procurement',
+  'Create a purchase order for chairs',
+  20,
+  'Create a purchase order for 50 office chairs',
+  'I created a purchase order plan for 50 office chairs. It needs approval.',
+  'wf-demo-procurement',
+);
+seedChatSession(
+  'demo-chat-onboarding',
+  'Start onboarding for Jane Doe',
+  29,
+  'Start onboarding workflow for Jane Doe',
+  'I started the onboarding process for Jane Doe. HR approval is pending.',
+  'wf-demo-onboarding',
+);
+seedChatSession(
+  'demo-chat-sales',
+  'Show pending sales orders',
+  14,
+  'Show pending sales orders this week',
+  'There are 3 pending sales orders this week.',
+  'wf-demo-sales-orders',
+);
 
 const domainSteps: Record<WorkflowDomain, Array<[string, string]>> = {
   Inventory: [
@@ -985,6 +1013,7 @@ export const mockIntegrationsApi = {
     const existing = mockConnections.find((c) => c.providerId === body.providerId);
     if (existing) {
       existing.isConnected = true;
+      existing.baseUrl = body.baseUrl ?? existing.baseUrl;
       existing.connectedAt = new Date().toISOString();
       return clone(existing);
     }
@@ -993,6 +1022,7 @@ export const mockIntegrationsApi = {
       providerId: body.providerId,
       providerName: body.providerName,
       isConnected: true,
+      baseUrl: body.baseUrl ?? null,
       connectedAt: new Date().toISOString(),
     };
     mockConnections.push(connection);

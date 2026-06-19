@@ -180,16 +180,15 @@ export interface ErpConnection {
   providerId: string;
   providerName: string;
   isConnected: boolean;
+  baseUrl: string | null;
   connectedAt: string;
 }
 
 export interface ConnectErpRequest {
   providerId: string;
   providerName: string;
-  apiKey?: string;
-  bearerToken?: string;
   baseUrl?: string;
-  extraConfig?: string;
+  credentials?: Record<string, string>;
 }
 
 export interface ActiveErpConnection {

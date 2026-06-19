@@ -9,7 +9,8 @@ namespace Requivo.Api.Controllers;
 [Route("api/integrations")]
 [Authorize]
 public class ErpConnectionsController(
-    IErpConnectionManager connectionManager) : ControllerBase
+    IErpConnectionManager connectionManager,
+    IProviderCredentialRegistry registry) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> List(CancellationToken ct)
@@ -26,6 +27,14 @@ public class ErpConnectionsController(
             return BadRequest(new { message = "ProviderId is required." });
         if (string.IsNullOrWhiteSpace(request.ProviderName))
             return BadRequest(new { message = "ProviderName is required." });
+
+        var spec = registry.GetSpec(request.ProviderId);
+        if (spec is null)
+            return BadRequest(new { message = $"Unknown provider: {request.ProviderId}." });
+
+        var errors = ValidateCredentials(request, spec);
+        if (errors.Length > 0)
+            return BadRequest(new { message = "Missing required fields.", errors });
 
         var userId = GetUserId();
         var result = await connectionManager.ConnectAsync(userId, request, ct);
@@ -55,6 +64,28 @@ public class ErpConnectionsController(
         });
 
         return Ok(dto);
+    }
+
+    private static string[] ValidateCredentials(ConnectErpRequest request, ProviderCredentialSpec spec)
+    {
+        var errors = new List<string>();
+
+        if (spec.RequiresBaseUrl && string.IsNullOrWhiteSpace(request.BaseUrl))
+            errors.Add("BaseUrl is required for this provider.");
+
+        if (request.Credentials is null || request.Credentials.Count == 0)
+        {
+            errors.Add($"Credentials are required for {spec.AuthMethod}. Provide: {string.Join(", ", spec.RequiredCredentialKeys)}.");
+            return errors.ToArray();
+        }
+
+        foreach (var key in spec.RequiredCredentialKeys)
+        {
+            if (!request.Credentials.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value))
+                errors.Add($"{key} is required.");
+        }
+
+        return errors.ToArray();
     }
 
     private string GetUserId()
