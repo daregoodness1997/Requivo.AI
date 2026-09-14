@@ -56,7 +56,7 @@ public class WorkflowEngineTests
     }
 
     [Fact]
-    public async Task ResumeApprovedStepAsync_ToolFailure_FailsWorkflow()
+    public async Task ResumeApprovedStepAsync_ToolFailure_TransitionsToWaitingInput()
     {
         // Arrange
         var dbName = $"requivo-resume-failure-{Guid.NewGuid()}";
@@ -81,7 +81,7 @@ public class WorkflowEngineTests
         // Assert
         var updated = await db.Workflows.FindAsync(seededWorkflowId);
         updated.Should().NotBeNull();
-        updated!.State.Should().Be(WorkflowState.Failed);
+        updated!.State.Should().Be(WorkflowState.WaitingInput);
         updated.FailureReason.Should().Contain("failed after 3 retries");
         updated.Steps[0].State.Should().Be(WorkflowState.Failed);
         updated.Steps[0].CompletedAt.Should().NotBeNull();
@@ -142,6 +142,9 @@ public class WorkflowEngineTests
         stateStore.Setup(s => s.SaveAsync(It.IsAny<WorkflowContext>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         stateStore.Setup(s => s.DeleteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
         var approvals = new Mock<IApprovalService>();
+        var erpConnections = new Mock<IErpConnectionManager>();
+        erpConnections.Setup(e => e.GetActiveConnectionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Core.Models.ErpConnection>());
         var scopeFactory = new Mock<IServiceScopeFactory>();
 
         return new WorkflowEngine(
@@ -149,6 +152,7 @@ public class WorkflowEngineTests
             tools,
             stateStore.Object,
             approvals.Object,
+            erpConnections.Object,
             db,
             NullLogger<WorkflowEngine>.Instance,
             scopeFactory.Object);

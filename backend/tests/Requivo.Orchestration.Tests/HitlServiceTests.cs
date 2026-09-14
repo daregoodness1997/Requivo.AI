@@ -101,6 +101,11 @@ public class HitlServiceTests
         var approvals = new Mock<IApprovalService>();
         services.AddSingleton(approvals.Object);
 
+        var erpConnections = new Mock<IErpConnectionManager>();
+        erpConnections.Setup(e => e.GetActiveConnectionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Core.Models.ErpConnection>());
+        services.AddSingleton(erpConnections.Object);
+
         services.AddSingleton<ITool>(_ => new DeferredProcurementTool(success));
         services.AddScoped<WorkflowEngine>();
 
