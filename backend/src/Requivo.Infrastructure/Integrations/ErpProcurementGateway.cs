@@ -24,9 +24,19 @@ public class ErpProcurementGateway(
         CancellationToken ct = default)
     {
         var baseUrl = config["Erp:Procurement:BaseUrl"];
+
+        // Demo mode: when no ERP is configured, return a simulated response
         if (string.IsNullOrWhiteSpace(baseUrl))
         {
-            throw new InvalidOperationException("Erp:Procurement:BaseUrl is not configured.");
+            logger.LogInformation("[ErpProcurementGateway] Demo mode: simulated PO creation for workflow {Workflow}", context.WorkflowId);
+            await Task.Delay(200, ct); // simulate latency
+            return new CreatePurchaseOrderResponse
+            {
+                ExternalOrderId = $"PO-{DateTime.UtcNow:yyyyMMdd}-{Random.Shared.Next(100, 999)}",
+                Status = "created",
+                SourceSystem = "Demo",
+                ExternalDocumentUrl = null,
+            };
         }
 
         var createPath = config["Erp:Procurement:CreatePurchaseOrderPath"];

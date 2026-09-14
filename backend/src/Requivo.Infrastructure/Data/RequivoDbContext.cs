@@ -6,11 +6,16 @@ namespace Requivo.Infrastructure.Data;
 
 public class RequivoDbContext(DbContextOptions<RequivoDbContext> options) : DbContext(options)
 {
+    private static readonly JsonSerializerOptions JsonCamelCase = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     private static string? SerializeObject(object? value)
-        => value is null ? null : JsonSerializer.Serialize(value);
+        => value is null ? null : JsonSerializer.Serialize(value, JsonCamelCase);
 
     private static object? DeserializeObject(string? value)
-        => string.IsNullOrWhiteSpace(value) ? null : JsonSerializer.Deserialize<object>(value);
+        => string.IsNullOrWhiteSpace(value) ? null : JsonSerializer.Deserialize<object>(value, JsonCamelCase);
 
     public DbSet<Workflow> Workflows => Set<Workflow>();
     public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
