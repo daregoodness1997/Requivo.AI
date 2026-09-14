@@ -297,12 +297,13 @@ public class WorkflowEngine(
     private async Task ExecuteAsync(Workflow wf, string userId, CancellationToken ct)
     {
         var userConnections = await erpConnections.GetActiveConnectionsAsync(userId, ct);
-        var context = new WorkflowContext
-        {
-            WorkflowId = wf.Id.ToString(),
-            UserId = userId,
-            ErpConnections = userConnections,
-        };
+            var context = new WorkflowContext
+            {
+                WorkflowId = wf.Id.ToString(),
+                UserId = userId,
+                UserInput = wf.UserInput,
+                ErpConnections = userConnections,
+            };
         ChatMessage? assistantMsg = null;
         Requivo.AI.PlanResult? plan = null;
         var isResume = wf.State is WorkflowState.WaitingInput or WorkflowState.WaitingApproval;
@@ -531,8 +532,16 @@ public class WorkflowEngine(
         if (normalized.Contains("purchase order") || normalized.Contains("create po")) return true;
         if (normalized.Contains("onboarding")) return true;
 
-        return domain is WorkflowDomain.Finance or WorkflowDomain.Procurement;
+        if (domain is WorkflowDomain.Procurement) return true;
+
+        if (domain is WorkflowDomain.Finance && !IsReadOnlyFinanceRequest(normalized))
+            return true;
+
+        return false;
     }
+
+    private static bool IsReadOnlyFinanceRequest(string normalized)
+        => normalized.Contains("invoice") && (normalized.Contains("list") || normalized.Contains("show") || normalized.Contains("view") || normalized.Contains("all") || normalized.Contains("due") || normalized.Contains("overdue"));
 
     private static string ApprovalReasonForDomain(WorkflowDomain? domain)
         => domain switch
