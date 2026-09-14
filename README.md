@@ -1,5 +1,7 @@
 # Requivo AI
 
+[![CI](https://github.com/daregoodness1997/Requivo.AI/actions/workflows/ci.yml/badge.svg)](https://github.com/daregoodness1997/Requivo.AI/actions/workflows/ci.yml)
+
 Autonomous ERP Operations Agent — natural language → executable ERP workflows.
 
 ## Stack
@@ -75,6 +77,38 @@ Test user credentials: `admin.test@requivo.ai` / `Pass@1234` (same for all roles
 
 ## Quick Start — Local Development
 
+Requirements: **.NET SDK 10** (pinned by `backend/global.json`, restore falls back
+to the newest feature band), **Node 22+ / npm**. No other global tools are needed.
+
+### From a clean clone
+
+```bash
+# 1. Backend — restore + run the full test suite
+cd backend
+dotnet test Requivo.sln          # restore is implicit; uses committed packages.lock.json
+
+# 2. Frontend — install from the committed lockfile
+cd frontend
+npm ci                          # exact-install from package-lock.json
+npm run test                    # Vitest unit tests
+npm run lint                    # ESLint (zero warnings allowed)
+npm run typecheck               # tsc --noEmit
+npm run build                   # typecheck + Vite production build
+```
+
+Everything can be driven from the repo root with `make`:
+
+| Target                  | Runs                                         |
+|-------------------------|----------------------------------------------|
+| `make restore`          | `dotnet restore backend/Requivo.sln`         |
+| `make install-frontend` | `npm ci`                                     |
+| `make build-backend`    | `dotnet build backend/Requivo.sln`           |
+| `make test-backend`     | `dotnet test backend/Requivo.sln`            |
+| `make build-frontend`   | `npm run build`                              |
+| `make test-frontend`    | `npm run test`                               |
+| `make lint`             | `npm run lint` + `npm run typecheck`         |
+| `make clean`            | `dotnet clean` + remove `frontend/dist`, `node_modules` |
+
 ### Backend
 
 ```bash
@@ -83,6 +117,10 @@ dotnet restore
 dotnet ef database update   # requires local PostgreSQL
 dotnet run                  # https://localhost:7001 (launchSettings.json)
 ```
+
+The SDK version is pinned in `backend/global.json` and NuGet package versions are
+locked by `packages.lock.json` (rendered via `Directory.Build.props`), so builds
+are reproducible across clones and CI.
 
 ### Frontend
 
@@ -93,6 +131,18 @@ npm run dev                 # http://localhost:5173
 ```
 
 The frontend reads API base URL from `VITE_API_BASE_URL` in `.env`. Default: `http://localhost:8080` (Docker). For local `dotnet run`, change to `http://localhost:5000`.
+
+### Tests
+
+- **Backend** — `dotnet test Requivo.sln` runs xUnit suites for `Requivo.Core`,
+  `Requivo.Orchestration`, `Requivo.Tools`, `Requivo.AI`, and
+  `Requivo.Infrastructure` (tools, workflow engine/HITL, prompt planning, ERP
+  gateway, persistence).
+- **Frontend** — Vitest + Testing Library (`npm run test`); component tests live
+  next to their sources as `*.test.tsx`.
+
+The CI workflow (`.github/workflows/ci.yml`) runs the backend suite and the
+frontend lint/typecheck/test/build on every push and pull request.
 
 ### Environment variables
 
