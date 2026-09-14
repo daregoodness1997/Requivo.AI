@@ -8,7 +8,7 @@ build-backend:
 	dotnet build backend/Requivo.sln --no-restore
 
 test-backend:
-	dotnet test backend/Requivo.sln --no-build --verbosity normal
+	dotnet test backend/Requivo.sln --verbosity quiet
 
 # ─── Frontend ─────────────────────────────────────────────────────
 install-frontend:
