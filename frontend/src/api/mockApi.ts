@@ -659,6 +659,7 @@ function updateWorkflow(id: string, updater: (workflow: Workflow) => void) {
   if (!workflow) return;
   updater(workflow);
   workflow.updatedAt = new Date().toISOString();
+  useWorkflowStore.getState().upsertWorkflow(clone(workflow));
 }
 
 function addAudit(workflow: Workflow, step: WorkflowStep, outcome: string) {

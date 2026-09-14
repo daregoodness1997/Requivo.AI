@@ -25,6 +25,7 @@ export default function ChatPage() {
     setWorkflows,
     setMessages,
     upsertSession,
+    upsertWorkflow,
     addMessages,
     setActiveSession,
     setActiveWorkflow,
@@ -119,22 +120,23 @@ export default function ChatPage() {
       addMessages(response.session.id, msgs);
       if (response.assistantMessage) {
         setActiveWorkflow(response.workflow.id);
+        upsertWorkflow(response.workflow);
       }
     },
-    [addMessages, upsertSession, setActiveWorkflow],
+    [addMessages, upsertSession, upsertWorkflow, setActiveWorkflow],
   );
 
   const activeMessages = activeSessionId ? (messagesBySession[activeSessionId] ?? []) : [];
 
   return (
-    <div className="page-shell fade-up-delay flex h-[calc(100vh-6.1rem)] min-h-[34rem] flex-col overflow-hidden">
+    <div className="page-shell fade-up-delay flex h-[calc(100dvh-6.1rem)] min-h-[34rem] flex-col overflow-hidden">
       {activeConnections.length > 0 && (
-        <div className="flex shrink-0 items-center gap-2 border-b border-brand-100 bg-brand-50/60 px-4 py-1.5 text-xs text-brand-700">
-          <Network className="size-3.5" />
-          <span className="font-medium">Connected:</span>
+        <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-brand-100 bg-brand-50/60 px-4 py-1.5 text-xs text-brand-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <Network className="size-3.5 shrink-0" />
+          <span className="shrink-0 font-medium">Connected:</span>
           <div className="flex gap-1.5">
             {activeConnections.map((c) => (
-              <Badge key={c.providerId} tone="info">
+              <Badge key={c.providerId} tone="info" className="shrink-0">
                 {c.providerName}
               </Badge>
             ))}

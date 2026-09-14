@@ -121,7 +121,7 @@ export default function PurchaseOrderForm({ onSubmit, isSending }: Props) {
         <div className="space-y-2">
           {lines.map((line, i) => (
             <div key={i} className="rounded-xl border border-amber-200 bg-white/80 p-3">
-              <div className="mb-2 grid grid-cols-3 gap-2">
+              <div className="mb-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div>
                   <label className="mb-0.5 block text-[10px] font-medium text-amber-600">SKU *</label>
                   <input
