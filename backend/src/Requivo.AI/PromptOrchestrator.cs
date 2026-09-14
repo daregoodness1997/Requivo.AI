@@ -30,7 +30,7 @@ public class PromptOrchestrator(
             { "toolName": "InventoryTool", "description": "Check stock levels for office chairs", "input": {} }
           ]
         }
-                For ProcurementTool create-purchase-order steps, input MUST include:
+                For ProcurementTool, listing uses input as plain text, while create-purchase-order steps MUST include:
                 {
                     "supplierId": "supplier-123",
                     "currency": "USD",
@@ -108,8 +108,28 @@ public class PromptOrchestrator(
                 ClarificationQuestion: null);
         }
 
-        if (ContainsAny(lower, "purchase order", "procurement", "supplier", "po"))
+        if (ContainsAny(lower, "purchase order", "procurement", "supplier") || PoAbbreviationRegex.IsMatch(lower))
         {
+            var isListRequest = ContainsAny(lower, "list", "show", "all", "open", "view", "find", "search");
+            if (isListRequest)
+            {
+                return new PlanResult(
+                    WorkflowDomain.Procurement,
+                    [new PlannedStep("ProcurementTool", input, null)],
+                    NeedsClarification: false,
+                    ClarificationQuestion: null);
+            }
+
+            // If the input already contains structured form data (supplier=... or sku=...), route directly to the tool
+            if (ContainsAny(lower, "supplier=", "supplier =", "sku=", "sku =", "items:") || PoCreatePrefixRegex.IsMatch(lower))
+            {
+                return new PlanResult(
+                    WorkflowDomain.Procurement,
+                    [new PlannedStep("ProcurementTool", input, null)],
+                    NeedsClarification: false,
+                    ClarificationQuestion: null);
+            }
+
             return new PlanResult(
                 WorkflowDomain.Procurement,
                 Steps: [],
@@ -163,4 +183,10 @@ public class PromptOrchestrator(
 
     private static bool ContainsAny(string value, params string[] terms)
         => terms.Any(value.Contains);
+
+    private static readonly System.Text.RegularExpressions.Regex PoCreatePrefixRegex = new(
+        @"^create\s+purchase\s+order", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    private static readonly System.Text.RegularExpressions.Regex PoAbbreviationRegex = new(
+        @"\bpo\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
 }
